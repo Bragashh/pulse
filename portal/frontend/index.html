@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pulse — Developer Portal</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', sans-serif; background: #0f1117; color: #e2e8f0; min-height: 100vh; }
+    header { padding: 24px 40px; border-bottom: 1px solid #1e2330; display: flex; align-items: center; gap: 12px; }
+    header h1 { font-size: 1.4rem; font-weight: 600; letter-spacing: 0.05em; color: #7dd3fc; }
+    header span { font-size: 0.85rem; color: #64748b; }
+    .container { padding: 40px; }
+    .section-title { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: #64748b; margin-bottom: 20px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+    .card { background: #1a1f2e; border: 1px solid #1e2330; border-radius: 12px; padding: 24px; transition: border-color 0.2s; }
+    .card:hover { border-color: #334155; }
+    .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+    .card-name { font-size: 1rem; font-weight: 600; color: #f1f5f9; }
+    .card-env { font-size: 0.7rem; color: #64748b; margin-top: 2px; }
+    .badge { font-size: 0.7rem; font-weight: 600; padding: 3px 10px; border-radius: 99px; }
+    .badge.healthy { background: #052e16; color: #4ade80; }
+    .badge.unhealthy { background: #2d0a0a; color: #f87171; }
+    .badge.checking { background: #1e1a05; color: #facc15; }
+    .card-meta { font-size: 0.78rem; color: #64748b; margin-bottom: 20px; }
+    .card-meta span { color: #94a3b8; }
+    .btn { width: 100%; padding: 10px; border-radius: 8px; border: none; font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s; }
+    .btn:hover { opacity: 0.85; }
+    .btn-check { background: #1e3a5f; color: #7dd3fc; }
+    .btn-deploy { background: #1a3a2a; color: #4ade80; margin-top: 8px; }
+    .last-checked { font-size: 0.7rem; color: #475569; margin-top: 10px; text-align: center; }
+  </style>
+</head>
+<body>
+<header>
+  <h1>⚡ Pulse</h1>
+  <span>Internal Developer Portal</span>
+</header>
+<div class="container">
+  <div class="section-title">Services</div>
+  <div class="grid" id="grid"></div>
+</div>
+<script>
+  const services = [
+    { name: "pulse-backend", env: "staging", ip: "63.178.107.199", port: 80, healthPath: "/health" },
+    { name: "pulse-backend", env: "production", ip: "18.156.163.74", port: 80, healthPath: "/health" }
+  ];
+
+  function createCard(service) {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML =
+      '<div class="card-header">' +
+        '<div>' +
+          '<div class="card-name">' + service.name + '</div>' +
+          '<div class="card-env">' + service.env + '</div>' +
+        '</div>' +
+        '<span class="badge checking" id="badge-' + service.env + '">checking...</span>' +
+      '</div>' +
+      '<div class="card-meta">Host: <span>' + service.ip + ':' + service.port + '</span></div>' +
+      '<button class="btn btn-check" onclick="checkHealth(\'' + service.env + '\', \'' + service.ip + '\', ' + service.port + ', \'' + service.healthPath + '\')">Check Health</button>' +
+      '<button class="btn btn-deploy" onclick="triggerDeploy(\'' + service.name + '\', \'' + service.env + '\')">Deploy</button>' +
+      '<div class="last-checked" id="time-' + service.env + '">Never checked</div>';
+    return card;
+  }
+
+  async function checkHealth(env, ip, port, path) {
+    const badge = document.getElementById('badge-' + env);
+    const time = document.getElementById('time-' + env);
+    badge.className = 'badge checking';
+    badge.textContent = 'checking...';
+    try {
+      const res = await fetch('http://' + ip + ':' + port + path, { signal: AbortSignal.timeout(5000) });
+      if (res.ok) { badge.className = 'badge healthy'; badge.textContent = 'healthy'; }
+      else { badge.className = 'badge unhealthy'; badge.textContent = 'unhealthy'; }
+    } catch(e) {
+      badge.className = 'badge unhealthy';
+      badge.textContent = 'unreachable';
+    }
+    time.textContent = 'Last checked: ' + new Date().toLocaleTimeString();
+  }
+
+  function triggerDeploy(name, env) {
+    alert('Deploy triggered for ' + name + ' to ' + env + '\n\n(Jenkins webhook coming soon)');
+  }
+
+  const grid = document.getElementById('grid');
+  services.forEach(function(s) {
+    grid.appendChild(createCard(s));
+    checkHealth(s.env, s.ip, s.port, s.healthPath);
+  });
+</script>
+</body>
+</html>
