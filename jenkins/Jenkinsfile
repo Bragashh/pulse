@@ -14,15 +14,19 @@ pipeline {
                 echo 'Verifying project structure...'
                 sh 'test -f portal/backend/app.py && echo "app.py found"'
                 sh 'test -f portal/backend/requirements.txt && echo "requirements.txt found"'
-                sh 'test -f portal/backend/Dockerfile && echo "Dockerfile found"'
+                sh 'test -f portal/backend/Dockerfile && echo "Backend Dockerfile found"'
+                sh 'test -f portal/frontend/index.html && echo "index.html found"'
+                sh 'test -f portal/frontend/Dockerfile && echo "Frontend Dockerfile found"'
             }
         }
 
         stage('Build') {
             steps {
-                echo 'Building Docker image...'
+                echo 'Building Docker images...'
                 sh 'docker build -t pulse-backend:latest portal/backend/'
                 sh 'docker save pulse-backend:latest -o pulse-backend.tar'
+                sh 'docker build -t pulse-frontend:latest portal/frontend/'
+                sh 'docker save pulse-frontend:latest -o pulse-frontend.tar'
             }
         }
 

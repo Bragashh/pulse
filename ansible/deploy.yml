@@ -1,5 +1,5 @@
 ---
-- name: Deploy pulse-backend
+- name: Deploy pulse services
   hosts: all
   become: yes
 
@@ -16,24 +16,46 @@
         state: started
         enabled: yes
 
-    - name: Copy Docker image to host
+    - name: Copy backend Docker image
       copy:
         src: /var/jenkins_home/workspace/pulse/pulse-backend.tar
         dest: /tmp/pulse-backend.tar
 
-    - name: Load Docker image
+    - name: Load backend Docker image
       shell: docker load -i /tmp/pulse-backend.tar
 
-    - name: Stop existing container
+    - name: Stop existing backend container
       community.docker.docker_container:
         name: pulse-backend
         state: absent
 
-    - name: Run pulse-backend container
+    - name: Run backend container
       community.docker.docker_container:
         name: pulse-backend
         image: pulse-backend:latest
         state: started
         ports:
           - "80:5000"
+        restart_policy: always
+
+    - name: Copy frontend Docker image
+      copy:
+        src: /var/jenkins_home/workspace/pulse/pulse-frontend.tar
+        dest: /tmp/pulse-frontend.tar
+
+    - name: Load frontend Docker image
+      shell: docker load -i /tmp/pulse-frontend.tar
+
+    - name: Stop existing frontend container
+      community.docker.docker_container:
+        name: pulse-frontend
+        state: absent
+
+    - name: Run frontend container
+      community.docker.docker_container:
+        name: pulse-frontend
+        image: pulse-frontend:latest
+        state: started
+        ports:
+          - "8080:8080"
         restart_policy: always
