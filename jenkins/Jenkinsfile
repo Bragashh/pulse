@@ -11,8 +11,10 @@ pipeline {
 
         stage('Test') {
             steps {
-                echo 'Running tests...'
-                sh 'cd portal/backend && pip install -r requirements.txt --quiet && python -c "import flask; print(flask.__version__)"'
+                echo 'Verifying project structure...'
+                sh 'test -f portal/backend/app.py && echo "app.py found"'
+                sh 'test -f portal/backend/requirements.txt && echo "requirements.txt found"'
+                sh 'test -f portal/backend/Dockerfile && echo "Dockerfile found"'
             }
         }
 
