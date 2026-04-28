@@ -34,3 +34,22 @@ pipeline {
             steps {
                 input message: 'Deploy to Production?', ok: 'Yes, deploy'
             }
+        }
+
+        stage('Deploy to Production') {
+            steps {
+                echo 'Deploying to production...'
+                sh 'ansible-playbook -i ansible/inventory/production.ini ansible/deploy.yml'
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Pipeline completed successfully!'
+        }
+        failure {
+            echo 'Pipeline failed!'
+        }
+    }
+}
