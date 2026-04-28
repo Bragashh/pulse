@@ -16,11 +16,13 @@
         state: started
         enabled: yes
 
-    - name: Pull pulse-backend image
-      community.docker.docker_image:
-        name: pulse-backend
-        source: local
-        force_source: yes
+    - name: Copy Docker image to host
+      copy:
+        src: /var/jenkins_home/workspace/pulse/pulse-backend.tar
+        dest: /tmp/pulse-backend.tar
+
+    - name: Load Docker image
+      shell: docker load -i /tmp/pulse-backend.tar
 
     - name: Stop existing container
       community.docker.docker_container:
