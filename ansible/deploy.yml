@@ -1,0 +1,37 @@
+---
+- name: Deploy pulse-backend
+  hosts: all
+  become: yes
+
+  tasks:
+    - name: Install Docker
+      apt:
+        name: docker.io
+        state: present
+        update_cache: yes
+
+    - name: Start Docker service
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Pull pulse-backend image
+      community.docker.docker_image:
+        name: pulse-backend
+        source: local
+        force_source: yes
+
+    - name: Stop existing container
+      community.docker.docker_container:
+        name: pulse-backend
+        state: absent
+
+    - name: Run pulse-backend container
+      community.docker.docker_container:
+        name: pulse-backend
+        image: pulse-backend:latest
+        state: started
+        ports:
+          - "80:5000"
+        restart_policy: always

@@ -12,21 +12,21 @@ pipeline {
         stage('Test') {
             steps {
                 echo 'Running tests...'
-                sh 'echo No tests yet — placeholder'
+                sh 'cd portal/backend && pip install -r requirements.txt --quiet && python -c "import flask; print(flask.__version__)"'
             }
         }
 
         stage('Build') {
             steps {
                 echo 'Building Docker image...'
-                sh 'echo Docker build placeholder'
+                sh 'docker build -t pulse-backend:latest portal/backend/'
             }
         }
 
         stage('Deploy to Staging') {
             steps {
                 echo 'Deploying to staging...'
-                sh 'echo Ansible staging deploy placeholder'
+                sh 'ansible-playbook -i ansible/inventory/staging.ini ansible/deploy.yml'
             }
         }
 
@@ -34,22 +34,3 @@ pipeline {
             steps {
                 input message: 'Deploy to Production?', ok: 'Yes, deploy'
             }
-        }
-
-        stage('Deploy to Production') {
-            steps {
-                echo 'Deploying to production...'
-                sh 'echo Ansible production deploy placeholder'
-            }
-        }
-    }
-
-    post {
-        success {
-            echo 'Pipeline completed successfully!'
-        }
-        failure {
-            echo 'Pipeline failed!'
-        }
-    }
-}
