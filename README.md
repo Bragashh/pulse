@@ -2,11 +2,6 @@ Pulse — Internal Developer Portal
 A production-style internal developer portal that automates deployments across multiple environments, with a live dashboard for service health monitoring.
 What It Does
 Pulse is a full DevOps platform built from scratch. You push code to Gitea, Jenkins automatically picks it up, builds a Docker image, deploys it to staging, waits for manual approval, then deploys to production. A web dashboard shows the health status of all running services in real time.
-Live URLs
-
-Portal: http://63.178.107.199:8080
-Staging API: http://63.178.107.199/health
-Production API: http://18.156.163.74/health
 
 Full Deployment Flow
 1. Push code to Gitea
