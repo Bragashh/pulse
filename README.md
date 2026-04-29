@@ -14,7 +14,9 @@ Full Deployment Flow
 8. Portal dashboard updates to show both services healthy
 Tech Stack
 ToolRoleTerraformProvisions AWS infrastructure (EC2s, security groups, SSH keys)AWS EC2Hosts staging and production environments (eu-central-1)GiteaSelf-hosted Git server — source of truth for all codeJenkinsCI/CD server — builds, tests, and deploys automaticallyDockerEvery service runs as a containerAnsibleDeploys containers to EC2s via SSHAnsible VaultEncrypts all secrets — never stored in plain textFlaskBackend API with health check endpointNginxServes the frontend portalHTML/JSPortal dashboard with live health status cards
+
 Project Structure
+
 pulse/
 ├── terraform/          ← AWS infrastructure as code
 ├── ansible/
@@ -29,11 +31,9 @@ pulse/
 │   ├── backend/        ← Flask API (app.py, Dockerfile)
 │   └── frontend/       ← Nginx portal (index.html, Dockerfile)
 └── services/           ← future service configs
+
 Infrastructure
 Two EC2 instances provisioned by Terraform on AWS (t3.micro, free tier):
-
-Staging: 63.178.107.199
-Production: 18.156.163.74
 
 Security group allows ports 22 (SSH), 80 (API), 8080 (Portal).
 Pipeline Stages
