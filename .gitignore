@@ -1,1 +1,14 @@
 ansible/.vault_pass
+terraform/.terraform/
+terraform/terraform.tfstate
+terraform/terraform.tfstate.backup
+*.tfstate
+*.tfstate.backup
+.terraform/
+ansible/group_vars/*/vault_*
+*.pem
+*.key
+.env
+.env.*
+__pycache__/
+*.pyc
