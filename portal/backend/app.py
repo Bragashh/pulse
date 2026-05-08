@@ -98,5 +98,49 @@ def dora():
         }
     })
 
+@app.route('/score')
+def score():
+    total = 100
+
+    # Metrics penalties
+    cpu = psutil.cpu_percent(interval=1)
+    mem = psutil.virtual_memory().percent
+    disk = psutil.disk_usage('/').percent
+
+    if cpu > 80: total -= 20
+    elif cpu > 60: total -= 10
+
+    if mem > 80: total -= 20
+    elif mem > 60: total -= 10
+
+    if disk > 80: total -= 20
+    elif disk > 60: total -= 10
+
+    # Uptime penalties
+    for service in SERVICES:
+        try:
+            r = requests.get(service["url"], timeout=5)
+            if r.status_code != 200:
+                total -= 15
+        except:
+            total -= 15
+
+    # DORA penalty
+    runs_url = "https://api.github.com/repos/Bragashh/pulse/actions/runs?per_page=20"
+    runs_resp = requests.get(runs_url)
+    runs = runs_resp.json().get("workflow_runs", [])
+    total_runs = len(runs)
+    failed_runs = len([r for r in runs if r["conclusion"] == "failure"])
+    if total_runs > 0:
+        failure_rate = (failed_runs / total_runs) * 100
+        if failure_rate > 20: total -= 20
+        elif failure_rate > 10: total -= 10
+
+    return jsonify({
+        "score": max(0, total),
+        "max": 100,
+        "status": "healthy" if total >= 80 else "degraded" if total >= 50 else "critical"
+    })
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
