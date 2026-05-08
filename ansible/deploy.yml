@@ -2,13 +2,24 @@
 - name: Deploy pulse services
   hosts: all
   become: yes
+  vars_files:
+  - vault.yaml  
+
+  vars:
+    ecr_registry: "871576119954.dkr.ecr.eu-central-1.amazonaws.com"
+    aws_region: "eu-central-1"
 
   tasks:
-    - name: Install Docker
+    - name: Install required packages
       apt:
-        name: docker.io
+        name:
+          - docker.io
+          - python3-pip
         state: present
         update_cache: yes
+
+    - name: Install AWS CLI
+      shell: pip3 install awscli --break-system-packages
 
     - name: Start Docker service
       service:
@@ -16,13 +27,16 @@
         state: started
         enabled: yes
 
-    - name: Copy backend Docker image
-      copy:
-        src: /var/jenkins_home/workspace/pulse/pulse-backend.tar
-        dest: /tmp/pulse-backend.tar
+    - name: Login to ECR
+      shell: |
+        aws ecr get-login-password --region {{ aws_region }} | \
+        docker login --username AWS --password-stdin {{ ecr_registry }}
+      environment:
+        AWS_ACCESS_KEY_ID: "{{ aws_access_key_id }}"
+        AWS_SECRET_ACCESS_KEY: "{{ aws_secret_access_key }}"
 
-    - name: Load backend Docker image
-      shell: docker load -i /tmp/pulse-backend.tar
+    - name: Pull backend image from ECR
+      shell: docker pull {{ ecr_registry }}/pulse-backend:latest
 
     - name: Stop existing backend container
       community.docker.docker_container:
@@ -32,19 +46,14 @@
     - name: Run backend container
       community.docker.docker_container:
         name: pulse-backend
-        image: pulse-backend:latest
+        image: "{{ ecr_registry }}/pulse-backend:latest"
         state: started
         ports:
           - "80:5000"
         restart_policy: always
 
-    - name: Copy frontend Docker image
-      copy:
-        src: /var/jenkins_home/workspace/pulse/pulse-frontend.tar
-        dest: /tmp/pulse-frontend.tar
-
-    - name: Load frontend Docker image
-      shell: docker load -i /tmp/pulse-frontend.tar
+    - name: Pull frontend image from ECR
+      shell: docker pull {{ ecr_registry }}/pulse-frontend:latest
 
     - name: Stop existing frontend container
       community.docker.docker_container:
@@ -54,7 +63,7 @@
     - name: Run frontend container
       community.docker.docker_container:
         name: pulse-frontend
-        image: pulse-frontend:latest
+        image: "{{ ecr_registry }}/pulse-frontend:latest"
         state: started
         ports:
           - "8080:8080"
