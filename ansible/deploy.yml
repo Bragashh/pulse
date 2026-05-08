@@ -49,7 +49,7 @@
         image: "{{ ecr_registry }}/pulse-backend:latest"
         state: started
         ports:
-          - "80:5000"
+          - "5000:5000"
         restart_policy: always
 
     - name: Pull frontend image from ECR
@@ -66,5 +66,7 @@
         image: "{{ ecr_registry }}/pulse-frontend:latest"
         state: started
         ports:
-          - "8080:8080"
+          - "80:80"
+        links:
+          - "pulse-backend:pulse-backend"
         restart_policy: always
