@@ -12,3 +12,4 @@ ansible/group_vars/*/vault_*
 .env.*
 __pycache__/
 *.pyc
+ansible/vault.yaml
