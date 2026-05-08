@@ -84,10 +84,10 @@ def dora():
 
     # Change failure rate
     runs_url = "https://api.github.com/repos/Bragashh/pulse/actions/runs?per_page=20"
-    runs_resp = requests.get(runs_url, headers=headers)
+    runs_resp = requests.get(runs_url)
     runs_data = runs_resp.json()
-    runs = runs_data.get("workflow_runs", [])
-
+    runs = runs_data.get("workflow_runs", []) if isinstance(runs_data, dict) else []
+    
     total_runs = len(runs)
     failed_runs = len([r for r in runs if r["conclusion"] == "failure"])
     failure_rate = round((failed_runs / total_runs) * 100, 1) if total_runs > 0 else 0
