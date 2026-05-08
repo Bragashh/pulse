@@ -1,49 +1,105 @@
-Jenkins CI/CD full pipeline >> Migrate to GitHub Actions.
+# Pulse
 
-Pulse — Internal Developer Portal
-A production-style internal developer portal that automates deployments across multiple environments, with a live dashboard for service health monitoring.
+A modular DevOps monitoring platform deployed on AWS with a full CI/CD pipeline. Built to monitor infrastructure health, track service uptime, and measure engineering performance through DORA metrics.
 
-What It Does
-Pulse is a full DevOps platform built from scratch. You push code to Gitea, Jenkins automatically picks it up, builds a Docker image, deploys it to staging, waits for manual approval, then deploys to production. A web dashboard shows the health status of all running services in real time.
+**Live demo:** [https://pulse-hq.dev](https://pulse-hq.dev)
 
-Full Deployment Flow
-1. Push code to Gitea
-2. Jenkins detects the change automatically (Poll SCM)
-3. Jenkins pulls the code and verifies project structure
-4. Jenkins builds a Docker image of the service
-5. Ansible copies and deploys the image to the staging EC2
-6. Manual approval gate — you review staging before promoting
-7. Ansible deploys the same image to the production EC2
-8. Portal dashboard updates to show both services healthy
+## What it does
 
-Tech Stack
-ToolRoleTerraformProvisions AWS infrastructure (EC2s, security groups, SSH keys)AWS EC2Hosts staging and production environments (eu-central-1)GiteaSelf-hosted Git server — source of truth for all codeJenkinsCI/CD server — builds, tests, and deploys automaticallyDockerEvery service runs as a containerAnsibleDeploys containers to EC2s via SSHAnsible VaultEncrypts all secrets — never stored in plain textFlaskBackend API with health check endpointNginxServes the frontend portalHTML/JSPortal dashboard with live health status cards
+Pulse is a single-pane-of-glass monitoring dashboard for the things engineering teams actually care about:
 
-Infrastructure
-Two EC2 instances provisioned by Terraform on AWS (t3.micro, free tier):
+- **Server health** — live CPU, memory, and disk metrics from the host
+- **Service uptime** — periodic reachability checks against external dependencies with latency tracking
+- **DORA metrics** — deployment frequency and change failure rate computed from the GitHub API
+- **Health score** — composite 0-100 score that weights all signals into a single number
 
-Security group allows ports 22 (SSH), 80 (API), 8080 (Portal).
+All metrics refresh in real time on the frontend; no manual refresh needed.
 
-Pipeline Stages
-Checkout → Test → Build → Deploy to Staging → Approve → Deploy to Production
+## Architecture
 
-Checkout — pulls latest code from Gitea
-Test — verifies all required files exist
-Build — builds Docker images for backend and frontend
-Deploy to Staging — Ansible deploys to staging EC2
-Approve Production — manual gate, requires human confirmation
-Deploy to Production — Ansible deploys to production EC2
+\`\`\`
+                       ┌──────────────────┐
+                       │   Cloudflare     │  DNS + proxy + edge SSL
+                       │  pulse-hq.dev    │
+                       └────────┬─────────┘
+                                │ HTTPS
+                       ┌────────▼─────────┐
+                       │   Production     │  EC2 (eu-central-1)
+                       │   ┌──────────┐   │  Elastic IP — stable across rebuilds
+                       │   │  nginx   │   │
+                       │   │  (TLS)   │   │
+                       │   └────┬─────┘   │
+                       │   ┌────▼─────┐   │
+                       │   │  Flask   │   │  /health /metrics /uptime /dora /score
+                       │   └──────────┘   │
+                       └──────────────────┘
+                                ▲
+                                │ ansible-playbook
+                                │
+   ┌──────────┐   push    ┌─────┴──────┐   pull    ┌──────────┐
+   │  GitHub  │──────────▶│  GitHub    │──────────▶│   ECR    │
+   │  (main)  │           │  Actions   │           │ (Docker) │
+   └──────────┘           └────────────┘           └──────────┘
+\`\`\`
 
-Security
-All secrets encrypted with Ansible Vault (AES256)
-Vault password stored locally, never committed to Git
-SSH key authentication for all EC2 connections
-.vault_pass excluded via .gitignore
+Two environments share the same pipeline:
+- **Staging** at `staging.pulse-hq.dev` — for verifying changes before promotion
+- **Production** at `pulse-hq.dev` — the public site
 
-Extensibility
-Adding a new service is straightforward:
-Add its IP to the Ansible inventory
-Add a new card to the portal frontend
-Push to Gitea — Jenkins handles the rest
+Each environment has its own EC2 with a stable Elastic IP, a Let's Encrypt certificate (issued via DNS-01 against Cloudflare), and an Ansible-managed Docker deployment. Ansible Vault stores secrets (AWS keys, GitHub token) encrypted at rest.
 
-Planned extensions: crypto market monitor, stock prices, weather alerts, uptime checker, energy prices.
+## Tech stack
+
+- **Infrastructure:** Terraform, AWS EC2, AWS ECR, Cloudflare
+- **CI/CD:** GitHub Actions (build + push), Ansible (deploy)
+- **Backend:** Python 3.11, Flask, psutil, GitHub API
+- **Frontend:** Nginx, vanilla JS, single-page dashboard
+- **TLS:** Let's Encrypt with DNS-01 challenge (Cloudflare API)
+- **Secrets:** Ansible Vault (AES-256)
+
+## Deployment pipeline
+
+1. Push to `main` on GitHub
+2. GitHub Actions builds backend and frontend Docker images and pushes them to ECR
+3. Ansible playbook (run from local) pulls images from ECR onto the target EC2 and starts them with the correct env vars and mounted certs
+4. Frontend nginx serves the SPA on `:443` and reverse-proxies `/api/*` to the Flask backend on `:5000`
+
+The same playbook deploys both staging and production — the only difference is the inventory file:
+
+\`\`\`bash
+# Deploy to staging
+ansible-playbook -i ansible/inventory/staging.ini ansible/deploy.yml --ask-vault-pass
+
+# Deploy to production
+ansible-playbook -i ansible/inventory/production.ini ansible/deploy.yml --ask-vault-pass
+\`\`\`
+
+## Project layout
+
+\`\`\`
+pulse/
+├── portal/
+│   ├── backend/         # Flask app, Dockerfile
+│   └── frontend/        # nginx + dashboard, Dockerfile
+├── ansible/
+│   ├── deploy.yml       # main playbook
+│   ├── vault.yaml       # encrypted secrets (gitignored decrypted form)
+│   └── inventory/       # staging.ini, production.ini
+├── terraform/
+│   └── main.tf          # EC2s, security groups, Elastic IPs
+├── .github/workflows/
+│   └── deploy.yml       # CI: build + push to ECR
+└── docs/
+    └── screenshot.png
+\`\`\`
+
+## Notes
+
+- Both EC2s use Elastic IPs with `prevent_destroy = true` so the IPs survive Terraform rebuilds
+- Backend uses a fine-grained GitHub PAT to query DORA metrics (avoids the 60/hr unauthenticated rate limit)
+- Cloudflare Cache Rule bypasses cache for `/api/*` to keep dashboard data fresh
+- TLS certs are managed per-EC2 via certbot's DNS-01 plugin and auto-renew via systemd timer
+
+---
+
+Built by [Ionel Andrei Cataon](https://github.com/Bragashh/pulse).
