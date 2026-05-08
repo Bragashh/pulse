@@ -3,92 +3,166 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Pulse — Developer Portal</title>
+  <title>Pulse — DevOps Monitor</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Segoe UI', sans-serif; background: #0f1117; color: #e2e8f0; min-height: 100vh; }
-    header { padding: 24px 40px; border-bottom: 1px solid #1e2330; display: flex; align-items: center; gap: 12px; }
+    header { padding: 24px 40px; border-bottom: 1px solid #1e2330; display: flex; align-items: center; justify-content: space-between; }
     header h1 { font-size: 1.4rem; font-weight: 600; letter-spacing: 0.05em; color: #7dd3fc; }
     header span { font-size: 0.85rem; color: #64748b; }
-    .container { padding: 40px; }
-    .section-title { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: #64748b; margin-bottom: 20px; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
-    .card { background: #1a1f2e; border: 1px solid #1e2330; border-radius: 12px; padding: 24px; transition: border-color 0.2s; }
-    .card:hover { border-color: #334155; }
-    .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
-    .card-name { font-size: 1rem; font-weight: 600; color: #f1f5f9; }
-    .card-env { font-size: 0.7rem; color: #64748b; margin-top: 2px; }
+    .container { padding: 40px; display: grid; gap: 32px; }
+    .section-title { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: #64748b; margin-bottom: 16px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+    .card { background: #1a1f2e; border: 1px solid #1e2330; border-radius: 12px; padding: 24px; }
+    .card-label { font-size: 0.75rem; color: #64748b; margin-bottom: 8px; }
+    .card-value { font-size: 2rem; font-weight: 700; color: #f1f5f9; }
+    .card-sub { font-size: 0.78rem; color: #64748b; margin-top: 4px; }
+    .score-card { background: #1a1f2e; border: 1px solid #1e2330; border-radius: 12px; padding: 32px; display: flex; align-items: center; gap: 32px; }
+    .score-number { font-size: 4rem; font-weight: 800; }
+    .score-healthy { color: #4ade80; }
+    .score-degraded { color: #facc15; }
+    .score-critical { color: #f87171; }
+    .score-label { font-size: 1rem; color: #94a3b8; }
+    .score-status { font-size: 1.2rem; font-weight: 600; margin-top: 4px; }
+    .uptime-grid { display: grid; gap: 12px; }
+    .uptime-row { background: #1a1f2e; border: 1px solid #1e2330; border-radius: 10px; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; }
+    .uptime-name { font-size: 0.9rem; font-weight: 600; }
+    .uptime-latency { font-size: 0.78rem; color: #64748b; margin-top: 2px; }
     .badge { font-size: 0.7rem; font-weight: 600; padding: 3px 10px; border-radius: 99px; }
-    .badge.healthy { background: #052e16; color: #4ade80; }
-    .badge.unhealthy { background: #2d0a0a; color: #f87171; }
-    .badge.checking { background: #1e1a05; color: #facc15; }
-    .card-meta { font-size: 0.78rem; color: #64748b; margin-bottom: 20px; }
-    .card-meta span { color: #94a3b8; }
-    .btn { width: 100%; padding: 10px; border-radius: 8px; border: none; font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s; }
-    .btn:hover { opacity: 0.85; }
-    .btn-check { background: #1e3a5f; color: #7dd3fc; }
-    .btn-deploy { background: #1a3a2a; color: #4ade80; margin-top: 8px; }
-    .last-checked { font-size: 0.7rem; color: #475569; margin-top: 10px; text-align: center; }
+    .badge.up { background: #052e16; color: #4ade80; }
+    .badge.down { background: #2d0a0a; color: #f87171; }
+    .badge.degraded { background: #1e1a05; color: #facc15; }
+    .dora-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+    .loading { color: #475569; font-size: 0.85rem; }
+    .refresh { font-size: 0.75rem; color: #475569; }
   </style>
 </head>
 <body>
 <header>
-  <h1>⚡ Pulse</h1>
-  <span>Internal Developer Portal</span>
+  <div style="display:flex;align-items:center;gap:12px">
+    <h1>⚡ Pulse</h1>
+    <span>DevOps Monitor</span>
+  </div>
+  <span class="refresh" id="last-refresh">Loading...</span>
 </header>
+
 <div class="container">
-  <div class="section-title">Services</div>
-  <div class="grid" id="grid"></div>
+
+  <!-- Health Score -->
+  <div>
+    <div class="section-title">Health Score</div>
+    <div class="score-card">
+      <div class="score-number" id="score-number">—</div>
+      <div>
+        <div class="score-label">Overall System Health</div>
+        <div class="score-status" id="score-status">Loading...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Server Metrics -->
+  <div>
+    <div class="section-title">Server Metrics</div>
+    <div class="grid">
+      <div class="card">
+        <div class="card-label">CPU Usage</div>
+        <div class="card-value" id="cpu">—</div>
+        <div class="card-sub">percent</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Memory Usage</div>
+        <div class="card-value" id="mem">—</div>
+        <div class="card-sub">percent</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Disk Usage</div>
+        <div class="card-value" id="disk">—</div>
+        <div class="card-sub">percent</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Uptime -->
+  <div>
+    <div class="section-title">Uptime</div>
+    <div class="uptime-grid" id="uptime-grid">
+      <div class="loading">Loading services...</div>
+    </div>
+  </div>
+
+  <!-- DORA Metrics -->
+  <div>
+    <div class="section-title">DORA Metrics</div>
+    <div class="dora-grid">
+      <div class="card">
+        <div class="card-label">Commits (last 7 days)</div>
+        <div class="card-value" id="commits">—</div>
+        <div class="card-sub" id="per-day">per day</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Change Failure Rate</div>
+        <div class="card-value" id="failure-rate">—</div>
+        <div class="card-sub" id="runs-info">pipeline runs</div>
+      </div>
+    </div>
+  </div>
+
 </div>
+
 <script>
-  const services = [
-    { name: "pulse-backend", env: "staging", ip: "63.178.107.199", port: 80, healthPath: "/health" },
-    { name: "pulse-backend", env: "production", ip: "18.156.163.74", port: 80, healthPath: "/health" }
-  ];
+  const API = 'http://localhost:5001';
 
-  function createCard(service) {
-    const card = document.createElement('div');
-    card.className = 'card';
-    card.innerHTML =
-      '<div class="card-header">' +
+  async function fetchScore() {
+    const res = await fetch(API + '/score');
+    const data = await res.json();
+    const el = document.getElementById('score-number');
+    el.textContent = data.score;
+    el.className = 'score-number score-' + data.status;
+    document.getElementById('score-status').textContent = data.status.charAt(0).toUpperCase() + data.status.slice(1);
+  }
+
+  async function fetchMetrics() {
+    const res = await fetch(API + '/metrics');
+    const data = await res.json();
+    document.getElementById('cpu').textContent = data.cpu.percent + '%';
+    document.getElementById('mem').textContent = data.memory.percent + '%';
+    document.getElementById('disk').textContent = data.disk.percent + '%';
+  }
+
+  async function fetchUptime() {
+    const res = await fetch(API + '/uptime');
+    const data = await res.json();
+    const grid = document.getElementById('uptime-grid');
+    grid.innerHTML = '';
+    data.services.forEach(s => {
+      const row = document.createElement('div');
+      row.className = 'uptime-row';
+      row.innerHTML =
         '<div>' +
-          '<div class="card-name">' + service.name + '</div>' +
-          '<div class="card-env">' + service.env + '</div>' +
+          '<div class="uptime-name">' + s.name + '</div>' +
+          '<div class="uptime-latency">' + (s.latency_ms ? s.latency_ms + 'ms' : 'N/A') + ' — ' + s.url + '</div>' +
         '</div>' +
-        '<span class="badge checking" id="badge-' + service.env + '">checking...</span>' +
-      '</div>' +
-      '<div class="card-meta">Host: <span>' + service.ip + ':' + service.port + '</span></div>' +
-      '<button class="btn btn-check" onclick="checkHealth(\'' + service.env + '\', \'' + service.ip + '\', ' + service.port + ', \'' + service.healthPath + '\')">Check Health</button>' +
-      '<button class="btn btn-deploy" onclick="triggerDeploy(\'' + service.name + '\', \'' + service.env + '\')">Deploy</button>' +
-      '<div class="last-checked" id="time-' + service.env + '">Never checked</div>';
-    return card;
+        '<span class="badge ' + s.status + '">' + s.status + '</span>';
+      grid.appendChild(row);
+    });
   }
 
-  async function checkHealth(env, ip, port, path) {
-    const badge = document.getElementById('badge-' + env);
-    const time = document.getElementById('time-' + env);
-    badge.className = 'badge checking';
-    badge.textContent = 'checking...';
-    try {
-      const res = await fetch('http://' + ip + ':' + port + path, { signal: AbortSignal.timeout(5000) });
-      if (res.ok) { badge.className = 'badge healthy'; badge.textContent = 'healthy'; }
-      else { badge.className = 'badge unhealthy'; badge.textContent = 'unhealthy'; }
-    } catch(e) {
-      badge.className = 'badge unhealthy';
-      badge.textContent = 'unreachable';
-    }
-    time.textContent = 'Last checked: ' + new Date().toLocaleTimeString();
+  async function fetchDora() {
+    const res = await fetch(API + '/dora');
+    const data = await res.json();
+    document.getElementById('commits').textContent = data.deployment_frequency.commits_last_7_days;
+    document.getElementById('per-day').textContent = data.deployment_frequency.per_day + ' per day';
+    document.getElementById('failure-rate').textContent = data.change_failure_rate.failure_rate_percent + '%';
+    document.getElementById('runs-info').textContent = data.change_failure_rate.total_runs + ' pipeline runs';
   }
 
-  function triggerDeploy(name, env) {
-    alert('Deploy triggered for ' + name + ' to ' + env + '\n\n(Jenkins webhook coming soon)');
+  async function refresh() {
+    await Promise.all([fetchScore(), fetchMetrics(), fetchUptime(), fetchDora()]);
+    document.getElementById('last-refresh').textContent = 'Last updated: ' + new Date().toLocaleTimeString();
   }
 
-  const grid = document.getElementById('grid');
-  services.forEach(function(s) {
-    grid.appendChild(createCard(s));
-    checkHealth(s.env, s.ip, s.port, s.healthPath);
-  });
+  refresh();
+  setInterval(refresh, 30000);
 </script>
 </body>
 </html>
