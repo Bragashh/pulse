@@ -72,4 +72,4 @@
           - "/etc/letsencrypt:/etc/letsencrypt:ro"
         links:
           - "pulse-backend:pulse-backend"
-        restart_policy: alwayscd
+        restart_policy: always
