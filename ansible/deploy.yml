@@ -67,6 +67,9 @@
         state: started
         ports:
           - "80:80"
+          - "443:443"
+        volumes:
+          - "/etc/letsencrypt:/etc/letsencrypt:ro"
         links:
           - "pulse-backend:pulse-backend"
-        restart_policy: always
+        restart_policy: alwayscd
