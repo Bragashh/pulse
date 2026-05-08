@@ -3,6 +3,7 @@ from flask_cors import CORS
 import psutil
 import requests
 import time
+from datetime import datetime, timezone, timedelta
 
 app = Flask(__name__)
 CORS(app)
@@ -64,11 +65,8 @@ def uptime():
 @app.route('/dora')
 def dora():
     headers = {"Accept": "application/vnd.github+json"}
-    
-    from datetime import datetime, timezone, timedelta
     week_ago = datetime.now(timezone.utc) - timedelta(days=7)
 
-    # Deployment frequency
     commits_url = "https://api.github.com/repos/Bragashh/pulse/commits?sha=main&per_page=100"
     commits_resp = requests.get(commits_url, headers=headers)
     commits_data = commits_resp.json()
@@ -82,12 +80,11 @@ def dora():
     else:
         commits_count = 0
 
-    # Change failure rate
     runs_url = "https://api.github.com/repos/Bragashh/pulse/actions/runs?per_page=20"
-    runs_resp = requests.get(runs_url)
+    runs_resp = requests.get(runs_url, headers=headers)
     runs_data = runs_resp.json()
     runs = runs_data.get("workflow_runs", []) if isinstance(runs_data, dict) else []
-    
+
     total_runs = len(runs)
     failed_runs = len([r for r in runs if r["conclusion"] == "failure"])
     failure_rate = round((failed_runs / total_runs) * 100, 1) if total_runs > 0 else 0
@@ -102,6 +99,48 @@ def dora():
             "failed_runs": failed_runs,
             "failure_rate_percent": failure_rate
         }
+    })
+
+@app.route('/score')
+def score():
+    total = 100
+
+    cpu = psutil.cpu_percent(interval=1)
+    mem = psutil.virtual_memory().percent
+    disk = psutil.disk_usage('/').percent
+
+    if cpu > 80: total -= 20
+    elif cpu > 60: total -= 10
+
+    if mem > 80: total -= 20
+    elif mem > 60: total -= 10
+
+    if disk > 80: total -= 20
+    elif disk > 60: total -= 10
+
+    for service in SERVICES:
+        try:
+            r = requests.get(service["url"], timeout=5)
+            if r.status_code != 200:
+                total -= 15
+        except:
+            total -= 15
+
+    runs_url = "https://api.github.com/repos/Bragashh/pulse/actions/runs?per_page=20"
+    runs_resp = requests.get(runs_url)
+    runs_data = runs_resp.json()
+    runs = runs_data.get("workflow_runs", []) if isinstance(runs_data, dict) else []
+    total_runs = len(runs)
+    failed_runs = len([r for r in runs if r["conclusion"] == "failure"])
+    if total_runs > 0:
+        failure_rate = (failed_runs / total_runs) * 100
+        if failure_rate > 20: total -= 20
+        elif failure_rate > 10: total -= 10
+
+    return jsonify({
+        "score": max(0, total),
+        "max": 100,
+        "status": "healthy" if total >= 80 else "degraded" if total >= 50 else "critical"
     })
 
 if __name__ == '__main__':
