@@ -50,6 +50,8 @@
         state: started
         ports:
           - "5000:5000"
+        env:
+          GITHUB_TOKEN: "{{ github_token }}"
         restart_policy: always
 
     - name: Pull frontend image from ECR

@@ -75,11 +75,39 @@ resource "aws_instance" "production" {
   }
 }
 
+# Elastic IP for staging — survives terraform destroy due to prevent_destroy
+resource "aws_eip" "staging" {
+  instance = aws_instance.staging.id
+  domain   = "vpc"
+
+  lifecycle {
+    prevent_destroy = true
+  }
+
+  tags = {
+    Name = "pulse-staging-eip"
+  }
+}
+
+# Elastic IP for production — survives terraform destroy due to prevent_destroy
+resource "aws_eip" "production" {
+  instance = aws_instance.production.id
+  domain   = "vpc"
+
+  lifecycle {
+    prevent_destroy = true
+  }
+
+  tags = {
+    Name = "pulse-production-eip"
+  }
+}
+
 # Output the IPs so Ansible can use them
 output "staging_ip" {
-  value = aws_instance.staging.public_ip
+  value = aws_eip.staging.public_ip
 }
 
 output "production_ip" {
-  value = aws_instance.production.public_ip
+  value = aws_eip.production.public_ip
 }

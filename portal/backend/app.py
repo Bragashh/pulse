@@ -5,6 +5,16 @@ import requests
 import time
 from datetime import datetime, timezone, timedelta
 
+import os
+
+GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
+
+def github_headers():
+    headers = {"Accept": "application/vnd.github+json"}
+    if GITHUB_TOKEN:
+        headers["Authorization"] = f"Bearer {GITHUB_TOKEN}"
+    return headers
+
 app = Flask(__name__)
 CORS(app)
 
@@ -64,7 +74,7 @@ def uptime():
 
 @app.route('/dora')
 def dora():
-    headers = {"Accept": "application/vnd.github+json"}
+    headers = github_headers()
     week_ago = datetime.now(timezone.utc) - timedelta(days=7)
 
     commits_url = "https://api.github.com/repos/Bragashh/pulse/commits?sha=main&per_page=100"
@@ -127,7 +137,7 @@ def score():
             total -= 15
 
     runs_url = "https://api.github.com/repos/Bragashh/pulse/actions/runs?per_page=20"
-    runs_resp = requests.get(runs_url)
+    runs_resp = requests.get(runs_url, headers=github_headers())
     runs_data = runs_resp.json()
     runs = runs_data.get("workflow_runs", []) if isinstance(runs_data, dict) else []
     total_runs = len(runs)
