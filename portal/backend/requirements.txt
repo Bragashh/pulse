@@ -5,3 +5,4 @@ requests
 pytest
 pytest-flask
 pytest-mock
+prometheus-client
