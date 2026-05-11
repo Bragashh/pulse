@@ -1,0 +1,39 @@
+# Application services for Pulse v1.5.1.
+
+services:
+
+  redis:
+    image: redis:7-alpine
+    container_name: pulse-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - pulse-net
+    restart: unless-stopped
+
+  url-shortener:
+    build:
+      context: ./url-shortener
+      dockerfile: Dockerfile
+    container_name: pulse-url-shortener
+    ports:
+      - "8000:8000"
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - SHORTEN_RATE_LIMIT_PER_DAY=50
+    depends_on:
+      - redis
+    networks:
+      - pulse-net
+    restart: unless-stopped
+
+volumes:
+  redis-data:
+
+networks:
+  pulse-net:
+    external: true

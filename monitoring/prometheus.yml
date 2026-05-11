@@ -1,10 +1,3 @@
-# Prometheus configuration for Pulse v1.5.1.
-#
-# Scrapes:
-#   - The Pulse backend's /prometheus-metrics endpoint every 15 seconds.
-#
-# Alerting rules live in ./alerts/ and are picked up via rule_files.
-
 global:
   scrape_interval: 15s
   evaluation_interval: 15s
@@ -20,3 +13,11 @@ scrape_configs:
         labels:
           environment: 'local'
           service: 'pulse-backend'
+
+  - job_name: 'url-shortener'
+    metrics_path: '/prometheus-metrics'
+    static_configs:
+      - targets: ['url-shortener:8000']
+        labels:
+          environment: 'local'
+          service: 'url-shortener'
