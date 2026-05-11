@@ -1,0 +1,18 @@
+---
+# Deploy the Pulse application (backend + frontend).
+# Assumes the host has already been provisioned.
+#
+# Usage:
+#   ansible-playbook -i inventory/production.ini playbooks/deploy-pulse.yml
+
+- name: Deploy Pulse application
+  hosts: all
+  become: yes
+  vars_files:
+    - ../vault.yaml
+  vars:
+    ecr_registry: "871576119954.dkr.ecr.eu-central-1.amazonaws.com"
+    aws_region: "eu-central-1"
+  roles:
+    - common
+    - pulse

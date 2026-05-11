@@ -1,0 +1,34 @@
+---
+# Common host setup. Idempotent — safe to run repeatedly.
+
+- name: Install required system packages
+  apt:
+    name:
+      - docker.io
+      - python3-pip
+      - python3-docker
+    state: present
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: Install AWS CLI
+  shell: pip3 install awscli --break-system-packages
+  args:
+    creates: /usr/local/bin/aws
+
+- name: Start and enable Docker service
+  service:
+    name: docker
+    state: started
+    enabled: yes
+
+- name: Create Docker network for Pulse services
+  community.docker.docker_network:
+    name: pulse-net
+    state: present
+
+- name: Ensure /opt/pulse exists for runtime data
+  file:
+    path: /opt/pulse
+    state: directory
+    mode: '0755'

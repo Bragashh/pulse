@@ -1,0 +1,12 @@
+---
+# Provision a fresh host with the base requirements (Docker, AWS CLI, etc.).
+# Runs the 'common' role only. Safe to run repeatedly.
+#
+# Usage:
+#   ansible-playbook -i inventory/production.ini playbooks/provision-host.yml
+
+- name: Provision host with base requirements
+  hosts: all
+  become: yes
+  roles:
+    - common

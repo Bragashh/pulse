@@ -1,0 +1,61 @@
+---
+# Deploy the Pulse application: backend (Flask) + frontend (nginx with HTML).
+
+- name: Login to ECR
+  shell: |
+    aws ecr get-login-password --region {{ aws_region }} | \
+    docker login --username AWS --password-stdin {{ ecr_registry }}
+  environment:
+    AWS_ACCESS_KEY_ID: "{{ aws_access_key_id }}"
+    AWS_SECRET_ACCESS_KEY: "{{ aws_secret_access_key }}"
+  changed_when: false
+
+- name: Pull backend image from ECR
+  community.docker.docker_image:
+    name: "{{ ecr_registry }}/pulse-backend:latest"
+    source: pull
+    force_source: yes
+
+- name: Ensure pulse data directory exists
+  file:
+    path: /opt/pulse/data
+    state: directory
+    mode: '0755'
+
+- name: Run backend container
+  community.docker.docker_container:
+    name: pulse-backend
+    image: "{{ ecr_registry }}/pulse-backend:latest"
+    state: started
+    recreate: yes
+    networks:
+      - name: pulse-net
+    ports:
+      - "5000:5000"
+    env:
+      GITHUB_TOKEN: "{{ github_token }}"
+      PULSE_DB_PATH: "/data/pulse.db"
+    volumes:
+      - /opt/pulse/data:/data
+    restart_policy: always
+
+- name: Pull frontend image from ECR
+  community.docker.docker_image:
+    name: "{{ ecr_registry }}/pulse-frontend:latest"
+    source: pull
+    force_source: yes
+
+- name: Run frontend container
+  community.docker.docker_container:
+    name: pulse-frontend
+    image: "{{ ecr_registry }}/pulse-frontend:latest"
+    state: started
+    recreate: yes
+    networks:
+      - name: pulse-net
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    restart_policy: always
