@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pulse Admin Console</title>
+  <style>
+    /* --- Reset & base --- */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #1c1917;
+      color: #fafaf9;
+      min-height: 100vh;
+      padding: 0;
+    }
+
+    /* --- Layout --- */
+    .container { max-width: 1400px; margin: 0 auto; padding: 0 24px; }
+
+    /* --- Header bar --- */
+    header {
+      background: #0c0a09;
+      border-bottom: 2px solid #f97316;
+      padding: 16px 0;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    header .container { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand .logo { font-size: 28px; }
+    .brand h1 { font-size: 20px; font-weight: 700; letter-spacing: 0.02em; }
+    .brand .badge {
+      background: #f97316;
+      color: #1c1917;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 4px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .header-info { font-size: 13px; color: #a8a29e; display: flex; gap: 24px; }
+    .header-info span strong { color: #fafaf9; }
+
+    /* --- Section heading --- */
+    h2 {
+      font-size: 14px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #a8a29e;
+      margin: 32px 0 12px 0;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #292524;
+    }
+
+    /* --- Cards & grids --- */
+    .grid { display: grid; gap: 16px; }
+    .grid-4 { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+    .grid-2 { grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); }
+
+    .card {
+      background: #292524;
+      border: 1px solid #44403c;
+      border-radius: 8px;
+      padding: 18px;
+    }
+    .card-title {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #a8a29e;
+      margin-bottom: 8px;
+    }
+    .card-value { font-size: 32px; font-weight: 700; line-height: 1.1; }
+    .card-value.small { font-size: 24px; }
+    .card-sub { font-size: 12px; color: #a8a29e; margin-top: 6px; }
+    .card-sub strong { color: #fafaf9; }
+
+    /* --- Status pills --- */
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 2px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .pill.ok { background: rgba(34,197,94,0.15); color: #4ade80; }
+    .pill.warn { background: rgba(234,179,8,0.15); color: #facc15; }
+    .pill.bad { background: rgba(239,68,68,0.15); color: #f87171; }
+    .pill::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+    /* --- Demo cards --- */
+    .demo-card { display: flex; flex-direction: column; gap: 12px; }
+    .demo-card h3 { font-size: 16px; font-weight: 600; color: #fafaf9; }
+    .demo-card p.desc { font-size: 13px; color: #a8a29e; line-height: 1.5; }
+    .demo-inputs { display: flex; gap: 12px; flex-wrap: wrap; }
+    .demo-inputs label {
+      display: flex; flex-direction: column; gap: 4px;
+      font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #a8a29e;
+      flex: 1;
+      min-width: 100px;
+    }
+    .demo-inputs input {
+      background: #0c0a09;
+      border: 1px solid #44403c;
+      color: #fafaf9;
+      padding: 8px 10px;
+      border-radius: 4px;
+      font-size: 14px;
+      font-family: 'JetBrains Mono', 'Consolas', monospace;
+    }
+    .demo-inputs input:disabled { opacity: 0.5; cursor: not-allowed; }
+    .demo-inputs input:focus { outline: none; border-color: #f97316; }
+
+    .demo-actions { display: flex; gap: 8px; align-items: center; }
+    button {
+      background: #f97316;
+      color: #1c1917;
+      border: none;
+      padding: 9px 18px;
+      font-size: 13px;
+      font-weight: 700;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.15s ease, transform 0.05s ease;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    button:hover:not(:disabled) { background: #fb923c; }
+    button:active:not(:disabled) { transform: translateY(1px); }
+    button:disabled { background: #44403c; color: #78716c; cursor: not-allowed; }
+    button.stop { background: #ef4444; color: #fafaf9; }
+    button.stop:hover:not(:disabled) { background: #f87171; }
+    button.secondary { background: transparent; border: 1px solid #44403c; color: #fafaf9; }
+    button.secondary:hover:not(:disabled) { border-color: #f97316; color: #f97316; }
+
+    .demo-status { font-size: 12px; color: #a8a29e; font-family: monospace; }
+    .demo-status.running { color: #facc15; }
+
+    /* --- Links section --- */
+    .link-grid { display: flex; gap: 12px; flex-wrap: wrap; }
+    .link-button {
+      background: #292524;
+      border: 1px solid #44403c;
+      color: #fafaf9;
+      padding: 12px 18px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: border-color 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .link-button:hover { border-color: #f97316; color: #f97316; }
+    .link-button .icon { font-size: 16px; }
+
+    /* --- Active demos list --- */
+    .active-list {
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .active-row {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      padding: 10px 14px;
+      background: #1c1917;
+      border: 1px solid #44403c;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+    .active-row .meta { color: #a8a29e; font-family: monospace; font-size: 12px; }
+    .active-row .kind { font-weight: 600; color: #fafaf9; }
+    .empty-state { color: #78716c; font-style: italic; padding: 14px; text-align: center; }
+
+    /* --- Footer --- */
+    footer {
+      text-align: center;
+      color: #78716c;
+      font-size: 12px;
+      padding: 32px 0 24px;
+      border-top: 1px solid #292524;
+      margin-top: 48px;
+    }
+
+    /* --- Container health status colors --- */
+    .container-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 6px 0; font-size: 13px;
+      border-bottom: 1px solid #292524;
+    }
+    .container-row:last-child { border-bottom: none; }
+    .container-row .name { color: #fafaf9; font-family: monospace; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <div class="brand">
+        <span class="logo">⚙️</span>
+        <h1>Pulse Admin</h1>
+        <span class="badge">Operator Console</span>
+      </div>
+      <div class="header-info">
+        <span>Host: <strong id="hostname">—</strong></span>
+        <span>User: <strong>admin</strong></span>
+        <span>Time: <strong id="clock">—</strong></span>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <h2>System Health</h2>
+    <div class="grid grid-4">
+      <div class="card">
+        <div class="card-title">Health Score</div>
+        <div class="card-value" id="healthScore">—</div>
+        <div class="card-sub" id="healthStatus">checking…</div>
+      </div>
+      <div class="card">
+        <div class="card-title">CPU</div>
+        <div class="card-value small" id="cpuPercent">—%</div>
+        <div class="card-sub">host system</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Memory</div>
+        <div class="card-value small" id="memPercent">—%</div>
+        <div class="card-sub" id="memDetail">—</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Disk</div>
+        <div class="card-value small" id="diskPercent">—%</div>
+        <div class="card-sub">root filesystem</div>
+      </div>
+    </div>
+
+    <h2>Demo Controls</h2>
+    <div class="grid grid-2">
+      <!-- Burst -->
+      <div class="card demo-card" id="card-burst">
+        <h3>Burst</h3>
+        <p class="desc">Fire N requests rapidly. Brief spike in request-rate panels. Short-lived (no stop).</p>
+        <div class="demo-inputs">
+          <label>Count (1–100)
+            <input type="number" id="burst-count" value="20" min="1" max="100" />
+          </label>
+        </div>
+        <div class="demo-actions">
+          <button onclick="startDemo('burst')">Start</button>
+          <span class="demo-status" id="burst-status"></span>
+        </div>
+      </div>
+
+      <!-- Sustained -->
+      <div class="card demo-card" id="card-sustained">
+        <h3>Sustained Load</h3>
+        <p class="desc">Steady traffic for N seconds at M requests/second. Use the stop button to interrupt.</p>
+        <div class="demo-inputs">
+          <label>Duration sec (5–60)
+            <input type="number" id="sustained-duration" value="30" min="5" max="60" />
+          </label>
+          <label>RPS (1–5)
+            <input type="number" id="sustained-rps" value="3" min="1" max="5" />
+          </label>
+        </div>
+        <div class="demo-actions">
+          <button onclick="startDemo('sustained')">Start</button>
+          <button class="stop" id="sustained-stop" onclick="stopDemo('sustained')" disabled>Stop</button>
+          <span class="demo-status" id="sustained-status"></span>
+        </div>
+      </div>
+
+      <!-- Errors -->
+      <div class="card demo-card" id="card-errors">
+        <h3>Error Burst</h3>
+        <p class="desc">Generate N intentional 500s. Drives the error-rate metric up.</p>
+        <div class="demo-inputs">
+          <label>Count (1–50)
+            <input type="number" id="errors-count" value="5" min="1" max="50" />
+          </label>
+        </div>
+        <div class="demo-actions">
+          <button onclick="startDemo('errors')">Start</button>
+          <span class="demo-status" id="errors-status"></span>
+        </div>
+      </div>
+
+      <!-- Slow -->
+      <div class="card demo-card" id="card-slow">
+        <h3>Slow Request</h3>
+        <p class="desc">A single request that sleeps N seconds. Visible as a latency spike in p95 panels.</p>
+        <div class="demo-inputs">
+          <label>Delay sec (1–5)
+            <input type="number" id="slow-delay" value="2" min="1" max="5" />
+          </label>
+        </div>
+        <div class="demo-actions">
+          <button onclick="startDemo('slow')">Start</button>
+          <button class="stop" id="slow-stop" onclick="stopDemo('slow')" disabled>Stop</button>
+          <span class="demo-status" id="slow-status"></span>
+        </div>
+      </div>
+    </div>
+
+    <h2>Active Demos</h2>
+    <div class="card">
+      <div class="active-list" id="activeList">
+        <div class="empty-state">Loading…</div>
+      </div>
+    </div>
+
+    <h2>Quick Links</h2>
+    <div class="link-grid">
+      <a class="link-button" href="https://grafana.pulse-hq.dev" target="_blank"><span class="icon">📊</span>Grafana</a>
+      <a class="link-button" href="https://prometheus.pulse-hq.dev" target="_blank"><span class="icon">🔥</span>Prometheus</a>
+      <a class="link-button" href="https://grafana.pulse-hq.dev/explore" target="_blank"><span class="icon">📋</span>Loki Explore</a>
+      <a class="link-button" href="https://s.pulse-hq.dev" target="_blank"><span class="icon">🔗</span>URL Shortener</a>
+      <a class="link-button" href="https://pulse-hq.dev" target="_blank"><span class="icon">🌐</span>Public Dashboard</a>
+      <a class="link-button" href="https://github.com/Bragashh/pulse" target="_blank"><span class="icon">📦</span>GitHub Repo</a>
+    </div>
+
+    <footer>
+      Pulse Admin Console &middot; v1.5.1 &middot; Restricted access
+    </footer>
+  </div>
+
+  <script>
+    // Track local state per demo kind to manage button enabled/disabled
+    const demoState = { burst: null, sustained: null, errors: null, slow: null };
+
+    // The admin page is served at admin.pulse-hq.dev / admin-staging.pulse-hq.dev.
+    // The same nginx proxies /demo/* to the backend with X-Admin-Surface set, so
+    // we can fetch relative URLs from here.
+
+    // --- Clock + hostname ---
+    function updateClock() {
+      document.getElementById('clock').textContent = new Date().toLocaleTimeString();
+    }
+    document.getElementById('hostname').textContent = location.hostname;
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // --- System health (Tier 3) ---
+    async function refreshHealth() {
+      try {
+        const [score, metrics] = await Promise.all([
+          fetch('/score').then(r => r.json()),
+          fetch('/metrics').then(r => r.json()),
+        ]);
+
+        document.getElementById('healthScore').textContent = score.score;
+        const status = score.status;
+        const statusEl = document.getElementById('healthStatus');
+        statusEl.innerHTML = `<span class="pill ${status === 'healthy' ? 'ok' : status === 'degraded' ? 'warn' : 'bad'}">${status}</span>`;
+
+        document.getElementById('cpuPercent').textContent = metrics.cpu.percent.toFixed(0) + '%';
+        document.getElementById('memPercent').textContent = metrics.memory.percent.toFixed(0) + '%';
+        const memGb = (metrics.memory.used / (1024 ** 3)).toFixed(1);
+        const memTotalGb = (metrics.memory.total / (1024 ** 3)).toFixed(1);
+        document.getElementById('memDetail').textContent = `${memGb} / ${memTotalGb} GB`;
+        document.getElementById('diskPercent').textContent = metrics.disk.percent.toFixed(0) + '%';
+      } catch (err) {
+        console.error('refreshHealth failed:', err);
+      }
+    }
+
+    // --- Demos ---
+    async function startDemo(kind) {
+      const card = document.getElementById('card-' + kind);
+      const statusEl = document.getElementById(kind + '-status');
+      const button = card.querySelector('button:not(.stop)');
+      const inputs = card.querySelectorAll('input');
+
+      // Build request body from inputs
+      const body = {};
+      inputs.forEach(input => {
+        const param = input.id.replace(kind + '-', '');
+        body[param === 'count' ? 'count' : param] = Number(input.value);
+      });
+      // Special-case sustained
+      if (kind === 'sustained') {
+        body.duration_seconds = Number(document.getElementById('sustained-duration').value);
+        body.rps = Number(document.getElementById('sustained-rps').value);
+        delete body.duration; delete body.rps; // avoid duplicate handling
+        body.duration_seconds = Number(document.getElementById('sustained-duration').value);
+        body.rps = Number(document.getElementById('sustained-rps').value);
+      }
+      if (kind === 'slow') {
+        body.delay_seconds = Number(document.getElementById('slow-delay').value);
+      }
+
+      try {
+        const resp = await fetch('/demo/' + kind, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        const data = await resp.json();
+
+        if (!resp.ok || !data.started) {
+          statusEl.textContent = data.error || 'failed';
+          statusEl.className = 'demo-status';
+          return;
+        }
+
+        // Started successfully — lock the card
+        demoState[kind] = data.demo_id;
+        button.disabled = true;
+        inputs.forEach(i => i.disabled = true);
+        statusEl.textContent = `running ${data.demo_id}`;
+        statusEl.className = 'demo-status running';
+
+        // Sustained and slow have stop buttons
+        if (kind === 'sustained' || kind === 'slow') {
+          document.getElementById(kind + '-stop').disabled = false;
+        }
+
+        // Decide when to unlock
+        const lockMs = lockDurationMs(kind, body);
+        setTimeout(() => unlockDemo(kind), lockMs);
+      } catch (err) {
+        statusEl.textContent = 'error: ' + err.message;
+      }
+    }
+
+    function lockDurationMs(kind, body) {
+      if (kind === 'burst') return 5000;
+      if (kind === 'errors') return 5000;
+      if (kind === 'sustained') return (body.duration_seconds || 30) * 1000 + 1000;
+      if (kind === 'slow') return (body.delay_seconds || 2) * 1000 + 1000;
+      return 5000;
+    }
+
+    async function stopDemo(kind) {
+      const demoId = demoState[kind];
+      if (!demoId) return;
+      try {
+        await fetch('/demo/stop/' + demoId, { method: 'POST' });
+      } catch (err) {
+        console.error('stop failed:', err);
+      }
+      unlockDemo(kind);
+    }
+
+    function unlockDemo(kind) {
+      const card = document.getElementById('card-' + kind);
+      const button = card.querySelector('button:not(.stop)');
+      const inputs = card.querySelectorAll('input');
+      const statusEl = document.getElementById(kind + '-status');
+
+      demoState[kind] = null;
+      button.disabled = false;
+      inputs.forEach(i => i.disabled = false);
+      statusEl.textContent = '';
+      statusEl.className = 'demo-status';
+
+      const stopBtn = document.getElementById(kind + '-stop');
+      if (stopBtn) stopBtn.disabled = true;
+    }
+
+    // --- Active demos list ---
+    async function refreshActive() {
+      try {
+        const resp = await fetch('/demo/active');
+        const data = await resp.json();
+        const list = document.getElementById('activeList');
+        if (!data.active || data.active.length === 0) {
+          list.innerHTML = '<div class="empty-state">No demos running.</div>';
+          return;
+        }
+        list.innerHTML = data.active.map(d => {
+          const age = Math.max(0, Math.floor(Date.now() / 1000) - d.started_at);
+          const params = Object.entries(d.params || {}).map(([k, v]) => `${k}=${v}`).join(' ');
+          return `
+            <div class="active-row">
+              <div>
+                <span class="kind">${d.kind}</span>
+                <span class="meta">${d.demo_id} · ${params}</span>
+              </div>
+              <div class="meta">running for ${age}s</div>
+            </div>
+          `;
+        }).join('');
+      } catch (err) {
+        console.error('refreshActive failed:', err);
+      }
+    }
+
+    // --- Init ---
+    refreshHealth();
+    refreshActive();
+    setInterval(refreshHealth, 10000);
+    setInterval(refreshActive, 2000);
+  </script>
+</body>
+</html>
