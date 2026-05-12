@@ -9,6 +9,7 @@ import os
 
 import db
 import metrics
+from demo import demo as demo_blueprint
 
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 
@@ -22,6 +23,7 @@ def github_headers():
 
 app = Flask(__name__)
 CORS(app)
+app.register_blueprint(demo_blueprint)
 
 
 # Default services seeded into the database on first call to /uptime if empty.
