@@ -59,6 +59,8 @@
     env:
       GITHUB_TOKEN: "{{ github_token }}"
       PULSE_DB_PATH: "/data/pulse.db"
+      REDIS_HOST: "redis"
+      REDIS_PORT: "6379"
     volumes:
       - /opt/pulse/data:/data
     restart_policy: always

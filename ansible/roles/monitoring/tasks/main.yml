@@ -76,6 +76,8 @@
     recreate: no
     networks:
       - name: pulse-net
+        aliases:
+          - prometheus
     volumes:
       - /opt/pulse/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - /opt/pulse/monitoring/alerts:/etc/prometheus/alerts:ro
@@ -95,6 +97,8 @@
     recreate: no
     networks:
       - name: pulse-net
+        aliases:
+          - loki
     volumes:
       - /opt/pulse/monitoring-data/loki:/loki
     command: -config.file=/etc/loki/local-config.yaml
