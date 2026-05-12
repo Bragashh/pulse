@@ -1,0 +1,63 @@
+# Prometheus alert rules for Pulse v1.5.1.
+# Mounted into the prometheus container; reloaded automatically.
+
+groups:
+  - name: pulse-platform
+    interval: 30s
+    rules:
+      - alert: HighErrorRate
+        expr: |
+          100 * sum(rate(pulse_http_requests_total{status_code=~"5.."}[2m]))
+          / sum(rate(pulse_http_requests_total[2m]))
+          > 5
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Backend error rate above 5%"
+          description: "5xx response rate is {{ $value | printf \"%.2f\" }}% over the last 2 minutes."
+
+      - alert: HighLatencyP95
+        expr: histogram_quantile(0.95, sum(rate(pulse_http_request_duration_seconds_bucket[2m])) by (le)) > 2
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "p95 request latency above 2s"
+          description: "p95 latency is {{ $value | printf \"%.2f\" }}s over the last 2 minutes."
+
+      - alert: HighCPU
+        expr: pulse_cpu_percent > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "CPU usage above 85%"
+          description: "Host CPU is {{ $value | printf \"%.1f\" }}% (>85% for 5+ minutes)."
+
+      - alert: HighMemory
+        expr: pulse_memory_percent > 90
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Memory usage above 90%"
+          description: "Host memory is {{ $value | printf \"%.1f\" }}% (>90% for 5+ minutes)."
+
+      - alert: LowDiskSpace
+        expr: pulse_disk_percent > 85
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Disk usage above 85% (less than 15% free)"
+          description: "Root filesystem is {{ $value | printf \"%.1f\" }}% full."
+
+      - alert: BackendDown
+        expr: up{job="pulse-backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Pulse backend is unreachable"
+          description: "Prometheus cannot scrape pulse-backend. Service likely down."

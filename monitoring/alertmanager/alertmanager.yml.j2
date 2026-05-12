@@ -1,0 +1,25 @@
+# Alertmanager configuration for Pulse v1.5.1.
+# Webhooks POST to the Pulse backend which formats and forwards to Discord.
+
+global:
+  resolve_timeout: 5m
+
+route:
+  group_by: ['alertname']
+  group_wait: 10s
+  group_interval: 30s
+  repeat_interval: 1h
+  receiver: 'pulse-backend'
+
+receivers:
+  - name: 'pulse-backend'
+    webhook_configs:
+      - url: 'http://pulse-backend:5000/api/alerts/webhook'
+        send_resolved: true
+
+inhibit_rules:
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname']

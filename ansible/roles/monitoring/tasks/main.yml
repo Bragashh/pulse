@@ -12,6 +12,7 @@
     - /opt/pulse/monitoring/grafana/datasources
     - /opt/pulse/monitoring/grafana/dashboards
     - /opt/pulse/monitoring/alerts
+    - /opt/pulse/monitoring/alertmanager
     - /opt/pulse/monitoring-data/prometheus
     - /opt/pulse/monitoring-data/grafana
     - /opt/pulse/monitoring-data/loki
@@ -72,7 +73,30 @@
     mode: '0644'
   ignore_errors: yes   # Empty folder is fine; alerts come in Step 8
 
+- name: Render Alertmanager config from template
+  template:
+    src: "{{ playbook_dir }}/../../monitoring/alertmanager/alertmanager.yml.j2"
+    dest: /opt/pulse/monitoring/alertmanager/alertmanager.yml
+    mode: '0644'
+
 # --- Containers ---
+
+- name: Run Alertmanager container
+  community.docker.docker_container:
+    name: pulse-alertmanager
+    image: prom/alertmanager:latest
+    state: started
+    recreate: no
+    networks:
+      - name: pulse-net
+        aliases:
+          - alertmanager
+    volumes:
+      - /opt/pulse/monitoring/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+    restart_policy: always
 
 - name: Run Prometheus container
   community.docker.docker_container:

@@ -25,6 +25,9 @@ app = Flask(__name__)
 CORS(app)
 app.register_blueprint(demo_blueprint)
 
+from alerts import alerts as alerts_bp
+app.register_blueprint(alerts_bp)
+
 
 # Default services seeded into the database on first call to /uptime if empty.
 SEED_SERVICES = [

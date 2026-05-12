@@ -67,6 +67,7 @@
       PULSE_DB_PATH: "/data/pulse.db"
       REDIS_HOST: "redis"
       REDIS_PORT: "6379"
+      DISCORD_WEBHOOK_URL: "https://discord.com/api/webhooks/1489267236614049804/2tZ19mcuxOR4ok1xdki2GDjS355P5XWfwnfLlDsGz6LJv4POUmsNhsMY91zQ8pid6RGd"
     volumes:
       - /opt/pulse/data:/data
     restart_policy: always
