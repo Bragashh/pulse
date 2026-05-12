@@ -136,8 +136,8 @@ server {
         proxy_set_header X-Admin-Surface "1";
     }
 
-    # Score and metrics for system health panels
-    location ~ ^/(score|metrics|health|services|uptime)$ {
+    # Score and metrics for system health panels, plus alert endpoints
+    location ~ ^/(score|metrics|health|services|uptime|api/alerts/.*)$ {
         proxy_pass http://pulse-backend:5000;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
