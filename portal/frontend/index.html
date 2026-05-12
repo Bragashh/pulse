@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Pulse — DevOps Monitoring Platform</title>
   <style>
-    /* ---------- Reset & base ---------- */
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
@@ -16,10 +15,8 @@
     }
     a { color: inherit; text-decoration: none; }
 
-    /* ---------- Layout ---------- */
     .container { max-width: 1400px; margin: 0 auto; padding: 0 24px; }
 
-    /* ---------- Header ---------- */
     header {
       background: #020617;
       border-bottom: 1px solid #1e293b;
@@ -38,23 +35,24 @@
     }
     .brand { display: flex; align-items: center; gap: 12px; }
     .brand .logo { font-size: 26px; }
-    .brand h1 {
-      font-size: 20px;
-      font-weight: 700;
-      letter-spacing: -0.01em;
-    }
+    .brand h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.01em; }
     .brand .tag {
+      font-size: 12px; color: #94a3b8;
+      padding: 3px 9px; background: #1e293b;
+      border-radius: 4px; letter-spacing: 0.02em;
+    }
+    .header-right { display: flex; gap: 12px; align-items: center; }
+    .header-right .refresh { font-size: 12px; color: #64748b; }
+    .admin-link {
       font-size: 12px;
       color: #94a3b8;
-      padding: 3px 9px;
-      background: #1e293b;
-      border-radius: 4px;
-      letter-spacing: 0.02em;
+      padding: 6px 12px;
+      border: 1px solid #334155;
+      border-radius: 6px;
+      transition: border-color 0.15s ease, color 0.15s ease;
     }
-    .header-right { display: flex; gap: 8px; align-items: center; }
-    .header-right .refresh { font-size: 12px; color: #64748b; }
+    .admin-link:hover { border-color: #3b82f6; color: #60a5fa; }
 
-    /* ---------- Buttons ---------- */
     button, .button {
       background: #3b82f6;
       color: white;
@@ -72,29 +70,20 @@
     }
     button:hover:not(:disabled), .button:hover { background: #2563eb; }
     button:active:not(:disabled), .button:active { transform: translateY(1px); }
-    button:disabled {
-      background: #334155;
-      color: #64748b;
-      cursor: not-allowed;
-    }
+    button:disabled { background: #334155; color: #64748b; cursor: not-allowed; }
     button.secondary, .button.secondary {
       background: transparent;
       border: 1px solid #334155;
       color: #f1f5f9;
     }
-    button.secondary:hover, .button.secondary:hover {
+    button.secondary:hover:not(:disabled), .button.secondary:hover {
       border-color: #3b82f6;
       color: #60a5fa;
       background: rgba(59, 130, 246, 0.05);
     }
-    button.stop {
-      background: #ef4444;
-    }
-    button.stop:hover:not(:disabled) {
-      background: #dc2626;
-    }
+    button.stop { background: #ef4444; }
+    button.stop:hover:not(:disabled) { background: #dc2626; }
 
-    /* ---------- Section titles ---------- */
     h2 {
       font-size: 13px;
       font-weight: 600;
@@ -104,9 +93,21 @@
       margin: 40px 0 16px 0;
       padding-bottom: 8px;
       border-bottom: 1px solid #1e293b;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
     }
+    h2 .h2-aux {
+      font-size: 12px;
+      font-weight: 500;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+    h2 .h2-aux a { color: #60a5fa; }
+    h2 .h2-aux a:hover { text-decoration: underline; }
 
-    /* ---------- Hero ---------- */
     .hero {
       background: linear-gradient(135deg, #1e293b 0%, #1e3a8a 100%);
       border-radius: 16px;
@@ -131,9 +132,7 @@
     .hero-sub { font-size: 14px; color: #94a3b8; margin-top: 8px; }
     .hero-actions { display: flex; flex-direction: column; gap: 8px; min-width: 200px; }
 
-    /* ---------- Cards & grids ---------- */
     .grid { display: grid; gap: 16px; }
-    .grid-4 { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
     .grid-3 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
     .grid-2 { grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); }
 
@@ -158,7 +157,6 @@
     .card-value.medium { font-size: 24px; }
     .card-sub { font-size: 12px; color: #94a3b8; margin-top: 6px; }
 
-    /* ---------- Pills ---------- */
     .pill {
       display: inline-flex;
       align-items: center;
@@ -170,18 +168,11 @@
       text-transform: uppercase;
       letter-spacing: 0.05em;
     }
-    .pill::before {
-      content: '';
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: currentColor;
-    }
+    .pill::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
     .pill.up, .pill.healthy { background: rgba(16, 185, 129, 0.15); color: #10b981; }
     .pill.degraded { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
     .pill.down, .pill.critical { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
 
-    /* ---------- Uptime list ---------- */
     .uptime-list { display: grid; gap: 8px; }
     .uptime-row {
       background: #1e293b;
@@ -198,33 +189,65 @@
     .uptime-url { font-size: 12px; color: #64748b; font-family: 'JetBrains Mono', 'Consolas', monospace; margin-top: 2px; }
     .uptime-latency { font-size: 12px; color: #94a3b8; font-family: monospace; }
 
-    /* ---------- Demo cards ---------- */
-    .demo-card { display: flex; flex-direction: column; gap: 12px; }
-    .demo-card h3 { font-size: 17px; font-weight: 600; }
-    .demo-card p.desc { font-size: 13px; color: #94a3b8; line-height: 1.5; }
-    .demo-inputs { display: flex; gap: 12px; flex-wrap: wrap; }
-    .demo-inputs label {
+    /* --- Unified demo controller --- */
+    .demo-controller {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 28px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 28px;
+      align-items: start;
+    }
+    @media (max-width: 800px) {
+      .demo-controller { grid-template-columns: 1fr; }
+    }
+    .demo-controller .left h3 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+    .demo-controller .left p {
+      font-size: 13px;
+      color: #94a3b8;
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+    .demo-controller .controls { display: flex; flex-direction: column; gap: 14px; }
+    .control-row { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+    .control-row > label {
       display: flex; flex-direction: column; gap: 4px;
       font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8;
-      flex: 1; min-width: 110px;
+      flex: 1; min-width: 130px;
     }
-    .demo-inputs input {
+    .control-row select, .control-row input {
       background: #0f172a;
       border: 1px solid #334155;
       color: #f1f5f9;
-      padding: 8px 10px;
+      padding: 9px 11px;
       border-radius: 4px;
       font-size: 14px;
       font-family: 'JetBrains Mono', 'Consolas', monospace;
     }
-    .demo-inputs input:disabled { opacity: 0.5; cursor: not-allowed; }
-    .demo-inputs input:focus { outline: none; border-color: #3b82f6; }
-    .demo-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-    .demo-status { font-size: 12px; color: #94a3b8; font-family: monospace; }
+    .control-row select:disabled, .control-row input:disabled { opacity: 0.5; cursor: not-allowed; }
+    .control-row select:focus, .control-row input:focus { outline: none; border-color: #3b82f6; }
+
+    .demo-buttons { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .demo-status {
+      font-size: 13px; color: #94a3b8; font-family: monospace;
+      margin-top: 8px;
+    }
     .demo-status.running { color: #f59e0b; }
     .demo-status.error { color: #ef4444; }
 
-    /* ---------- Footer ---------- */
+    .demo-cta {
+      background: linear-gradient(135deg, #1e3a8a 0%, #1e293b 100%);
+      border: 1px solid #3b82f6;
+      border-radius: 10px;
+      padding: 22px;
+      display: flex; flex-direction: column; gap: 14px;
+      justify-content: center;
+    }
+    .demo-cta-title { font-size: 14px; color: #cbd5e1; }
+    .demo-cta strong { color: #60a5fa; }
+
     footer {
       text-align: center;
       color: #64748b;
@@ -247,6 +270,7 @@
       </div>
       <div class="header-right">
         <span class="refresh" id="last-refresh">Loading…</span>
+        <a class="admin-link" href="https://admin.pulse-hq.dev" target="_blank">🔒 Admin</a>
       </div>
     </div>
   </header>
@@ -264,7 +288,6 @@
       </div>
       <div class="hero-actions">
         <a class="button" href="https://grafana.pulse-hq.dev/d/pulse-overview?kiosk" target="_blank">📊 View Live Metrics</a>
-        <a class="button secondary" href="https://grafana.pulse-hq.dev/explore?left=%7B%22datasource%22:%22loki%22%7D" target="_blank">📋 Open Logs</a>
       </div>
     </div>
 
@@ -310,75 +333,48 @@
     </div>
 
     <!-- Demo Controls -->
-    <h2>Demo Controls</h2>
-    <p style="color:#94a3b8;font-size:13px;margin-bottom:16px;">
-      Generate observable load on the platform. Watch the live metrics dashboard (button at the top) to see the spike in real time.
-      Rate-limited to 1 demo per minute per visitor.
-    </p>
-    <div class="grid grid-2">
-      <!-- Burst -->
-      <div class="card demo-card" id="card-burst">
-        <h3>Traffic Burst</h3>
-        <p class="desc">Fire N requests rapidly. Brief spike in request-rate panels.</p>
-        <div class="demo-inputs">
-          <label>Count (1–100)
-            <input type="number" id="burst-count" value="20" min="1" max="100" />
-          </label>
-        </div>
-        <div class="demo-actions">
-          <button onclick="startDemo('burst')">Start</button>
-          <span class="demo-status" id="burst-status"></span>
-        </div>
-      </div>
-
-      <!-- Sustained -->
-      <div class="card demo-card" id="card-sustained">
-        <h3>Sustained Load</h3>
-        <p class="desc">Steady traffic for N seconds at M req/s. Use stop button to interrupt.</p>
-        <div class="demo-inputs">
-          <label>Duration sec (5–60)
-            <input type="number" id="sustained-duration" value="30" min="5" max="60" />
-          </label>
-          <label>RPS (1–5)
-            <input type="number" id="sustained-rps" value="3" min="1" max="5" />
-          </label>
-        </div>
-        <div class="demo-actions">
-          <button onclick="startDemo('sustained')">Start</button>
-          <button class="stop" id="sustained-stop" onclick="stopDemo('sustained')" disabled>Stop</button>
-          <span class="demo-status" id="sustained-status"></span>
+    <h2>
+      Try It Live
+      <span class="h2-aux">→ <a href="https://grafana.pulse-hq.dev/d/pulse-overview?kiosk" target="_blank">Open the metrics dashboard</a> in another tab to watch the spike</span>
+    </h2>
+    <div class="demo-controller">
+      <div class="left">
+        <h3>Generate Load</h3>
+        <p>
+          Run a live load test against the Pulse backend. Traffic, errors, and slow requests are
+          simulated together to make every Grafana panel react in real time. Rate-limited to 1 test
+          per minute per visitor.
+        </p>
+        <div class="controls">
+          <div class="control-row">
+            <label>Stress level
+              <select id="level">
+                <option value="1">1 — Low (gentle warmup)</option>
+                <option value="2">2 — Medium-low</option>
+                <option value="3" selected>3 — Medium</option>
+                <option value="4">4 — High</option>
+                <option value="5">5 — Max</option>
+              </select>
+            </label>
+            <label>Duration (sec, 30–180)
+              <input type="number" id="duration" value="60" min="30" max="180" />
+            </label>
+          </div>
+          <div class="demo-buttons">
+            <button id="start-btn" onclick="startDemo()">▶ Start Test</button>
+            <button class="stop" id="stop-btn" onclick="stopDemo()" disabled>■ Stop</button>
+          </div>
+          <div class="demo-status" id="status"></div>
         </div>
       </div>
-
-      <!-- Errors -->
-      <div class="card demo-card" id="card-errors">
-        <h3>Error Burst</h3>
-        <p class="desc">Generate N intentional 500s. Drives the error-rate metric up.</p>
-        <div class="demo-inputs">
-          <label>Count (1–50)
-            <input type="number" id="errors-count" value="5" min="1" max="50" />
-          </label>
-        </div>
-        <div class="demo-actions">
-          <button onclick="startDemo('errors')">Start</button>
-          <span class="demo-status" id="errors-status"></span>
-        </div>
-      </div>
-
-      <!-- Slow -->
-      <div class="card demo-card" id="card-slow">
-        <h3>Slow Request</h3>
-        <p class="desc">A single request that sleeps N seconds. Spikes p95 latency.</p>
-        <div class="demo-inputs">
-          <label>Delay sec (1–5)
-            <input type="number" id="slow-delay" value="2" min="1" max="5" />
-          </label>
-        </div>
-        <div class="demo-actions">
-          <button onclick="startDemo('slow')">Start</button>
-          <button class="stop" id="slow-stop" onclick="stopDemo('slow')" disabled>Stop</button>
-          <span class="demo-status" id="slow-status"></span>
-        </div>
+      <div class="demo-cta">
+        <div class="demo-cta-title">Watch it happen in real time</div>
+        <p style="font-size:13px;color:#cbd5e1;">
+          The <strong>live metrics dashboard</strong> shows request rate, error rate, p95 latency,
+          and host resources updating every 5 seconds. Click Start, switch tabs, and watch the
+          panels react.
+        </p>
+        <a class="button" href="https://grafana.pulse-hq.dev/d/pulse-overview?kiosk" target="_blank">📊 Open Live Metrics</a>
       </div>
     </div>
 
@@ -389,13 +385,13 @@
   </div>
 
   <script>
-    const demoState = { burst: null, sustained: null, errors: null, slow: null };
+    let currentDemoId = null;
+    let unlockTimeout = null;
 
     function updateRefresh() {
       document.getElementById('last-refresh').textContent = 'updated ' + new Date().toLocaleTimeString();
     }
 
-    // --- Health (score + system metrics) ---
     async function refreshHealth() {
       try {
         const [score, metrics] = await Promise.all([
@@ -428,7 +424,6 @@
       }
     }
 
-    // --- Uptime monitoring ---
     async function refreshUptime() {
       try {
         const data = await fetch('/api/uptime').then(r => r.json());
@@ -454,7 +449,6 @@
       }
     }
 
-    // --- DORA metrics ---
     async function refreshDora() {
       try {
         const data = await fetch('/api/dora').then(r => r.json());
@@ -470,91 +464,70 @@
       }
     }
 
-    // --- Demo controls ---
-    async function startDemo(kind) {
-      const card = document.getElementById('card-' + kind);
-      const statusEl = document.getElementById(kind + '-status');
-      const button = card.querySelector('button:not(.stop)');
-      const inputs = card.querySelectorAll('input');
+    function setControlsEnabled(enabled) {
+      document.getElementById('level').disabled = !enabled;
+      document.getElementById('duration').disabled = !enabled;
+      document.getElementById('start-btn').disabled = !enabled;
+      document.getElementById('stop-btn').disabled = enabled;  // inverted
+    }
 
-      const body = {};
-      if (kind === 'burst' || kind === 'errors') {
-        body.count = Number(card.querySelector('input').value);
-      } else if (kind === 'sustained') {
-        body.duration_seconds = Number(document.getElementById('sustained-duration').value);
-        body.rps = Number(document.getElementById('sustained-rps').value);
-      } else if (kind === 'slow') {
-        body.delay_seconds = Number(document.getElementById('slow-delay').value);
-      }
+    function showStatus(text, cls) {
+      const el = document.getElementById('status');
+      el.textContent = text;
+      el.className = 'demo-status ' + (cls || '');
+    }
+
+    async function startDemo() {
+      const level = Number(document.getElementById('level').value);
+      const duration = Number(document.getElementById('duration').value);
 
       try {
-        const resp = await fetch('/demo/' + kind, {
+        const resp = await fetch('/demo/full-spectrum', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
+          body: JSON.stringify({ level, duration_seconds: duration }),
         });
         const data = await resp.json();
 
         if (!resp.ok || !data.started) {
-          statusEl.textContent = data.error || 'failed';
-          statusEl.className = 'demo-status error';
-          // Clear error after 5s
-          setTimeout(() => { statusEl.textContent = ''; statusEl.className = 'demo-status'; }, 5000);
+          showStatus(data.error || 'failed to start', 'error');
+          setTimeout(() => showStatus(''), 5000);
           return;
         }
 
-        demoState[kind] = data.demo_id;
-        button.disabled = true;
-        inputs.forEach(i => i.disabled = true);
-        statusEl.textContent = `running…`;
-        statusEl.className = 'demo-status running';
+        currentDemoId = data.demo_id;
+        setControlsEnabled(false);
+        const total = data.profile.rps * duration;
+        showStatus(`Test running — level ${level}, ~${total} requests over ${duration}s. Watch the dashboard!`, 'running');
 
-        if (kind === 'sustained' || kind === 'slow') {
-          document.getElementById(kind + '-stop').disabled = false;
-        }
-
-        const lockMs = lockDurationMs(kind, body);
-        setTimeout(() => unlockDemo(kind), lockMs);
+        // Auto-unlock when test finishes
+        unlockTimeout = setTimeout(() => unlockControls(true), duration * 1000 + 1000);
       } catch (err) {
-        statusEl.textContent = 'network error';
-        statusEl.className = 'demo-status error';
+        showStatus('network error', 'error');
       }
     }
 
-    function lockDurationMs(kind, body) {
-      if (kind === 'burst') return 5000;
-      if (kind === 'errors') return 5000;
-      if (kind === 'sustained') return (body.duration_seconds || 30) * 1000 + 1000;
-      if (kind === 'slow') return (body.delay_seconds || 2) * 1000 + 1000;
-      return 5000;
-    }
-
-    async function stopDemo(kind) {
-      const demoId = demoState[kind];
-      if (!demoId) return;
+    async function stopDemo() {
+      if (!currentDemoId) return;
       try {
-        await fetch('/demo/stop/' + demoId, { method: 'POST' });
-      } catch (err) { console.error('stop failed:', err); }
-      unlockDemo(kind);
+        await fetch('/demo/stop/' + currentDemoId, { method: 'POST' });
+      } catch (err) {
+        console.error('stop failed:', err);
+      }
+      unlockControls(false);
     }
 
-    function unlockDemo(kind) {
-      const card = document.getElementById('card-' + kind);
-      const button = card.querySelector('button:not(.stop)');
-      const inputs = card.querySelectorAll('input');
-      const statusEl = document.getElementById(kind + '-status');
-
-      demoState[kind] = null;
-      button.disabled = false;
-      inputs.forEach(i => i.disabled = false);
-      statusEl.textContent = '';
-      statusEl.className = 'demo-status';
-
-      const stopBtn = document.getElementById(kind + '-stop');
-      if (stopBtn) stopBtn.disabled = true;
+    function unlockControls(finishedNaturally) {
+      if (unlockTimeout) {
+        clearTimeout(unlockTimeout);
+        unlockTimeout = null;
+      }
+      currentDemoId = null;
+      setControlsEnabled(true);
+      showStatus(finishedNaturally ? 'Test complete.' : 'Test stopped.', '');
+      setTimeout(() => showStatus(''), 5000);
     }
 
-    // --- Init ---
     refreshHealth();
     refreshUptime();
     refreshDora();

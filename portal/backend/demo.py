@@ -48,6 +48,19 @@ SUSTAINED_RPS_MIN, SUSTAINED_RPS_MAX, SUSTAINED_RPS_DEFAULT = 1, 5, 3
 ERRORS_MIN, ERRORS_MAX, ERRORS_DEFAULT = 1, 50, 5
 SLOW_DELAY_MIN, SLOW_DELAY_MAX, SLOW_DELAY_DEFAULT = 1, 5, 2
 
+# Full-spectrum demo: single orchestrated load test
+FULLSPECTRUM_LEVEL_MIN, FULLSPECTRUM_LEVEL_MAX, FULLSPECTRUM_LEVEL_DEFAULT = 1, 5, 3
+FULLSPECTRUM_DURATION_MIN, FULLSPECTRUM_DURATION_MAX, FULLSPECTRUM_DURATION_DEFAULT = 30, 180, 60
+
+# Level -> per-second activity profile. Tuned for visible Grafana spikes without crushing the host.
+FULLSPECTRUM_PROFILES = {
+    1: {"rps": 2, "error_every": 20, "slow_every": 30, "slow_seconds": 1},
+    2: {"rps": 3, "error_every": 15, "slow_every": 20, "slow_seconds": 2},
+    3: {"rps": 5, "error_every": 10, "slow_every": 15, "slow_seconds": 2},
+    4: {"rps": 8, "error_every": 7,  "slow_every": 10, "slow_seconds": 3},
+    5: {"rps": 10, "error_every": 5, "slow_every": 8,  "slow_seconds": 4},
+}
+
 
 # --- Redis ---
 
@@ -85,27 +98,21 @@ def _check_and_register_demo() -> tuple[bool, str, dict]:
 
     Returns:
       (ok, demo_id_or_error_message, info_dict)
-
-    ok is True with a fresh UUID on success.
-    ok is False with a human-readable error message on rejection.
     """
     admin = _is_admin_surface()
     ip = _client_ip()
 
-    # Cooldown check (public only)
     if not admin:
         cooldown_key = f"demo:cooldown:{ip}"
         if _redis_safe(lambda: _r.exists(cooldown_key)):
             ttl = _redis_safe(lambda: _r.ttl(cooldown_key), default=0)
             return (False, f"demo cooldown active, retry in {ttl}s", {"retry_after": ttl})
 
-    # Concurrency check
     limit = ADMIN_CONCURRENCY_LIMIT if admin else PUBLIC_CONCURRENCY_LIMIT
     current = _redis_safe(lambda: int(_r.get("demo:concurrent") or 0), default=0)
     if current >= limit:
         return (False, f"too many concurrent demos ({current}/{limit}), try again shortly", {"limit": limit})
 
-    # Reserve the slot
     demo_id = uuid.uuid4().hex[:12]
     _redis_safe(lambda: _r.incr("demo:concurrent"))
     if not admin:
@@ -203,6 +210,50 @@ def _run_slow(delay_seconds: int, demo_id: str) -> None:
         _release_demo_slot(demo_id)
 
 
+def _run_full_spectrum(level: int, duration_seconds: int, demo_id: str) -> None:
+    """
+    Run sustained traffic, periodic errors, and periodic slow requests for `duration_seconds`.
+    Activity profile is driven by `level` (1-5). Single thread orchestrates all kinds for cleaner cleanup.
+    """
+    profile = FULLSPECTRUM_PROFILES.get(level, FULLSPECTRUM_PROFILES[FULLSPECTRUM_LEVEL_DEFAULT])
+    endpoints = ["/health", "/metrics", "/services", "/uptime"]
+
+    end_time = time.time() + duration_seconds
+    start_time = time.time()
+    request_interval = 1.0 / max(profile["rps"], 1)
+
+    last_error_at = 0
+    last_slow_at = 0
+
+    try:
+        while time.time() < end_time:
+            if _should_stop(demo_id):
+                return
+
+            elapsed = time.time() - start_time
+
+            # Sustained traffic — one request per loop iteration
+            _fire("GET", random.choice(endpoints))
+
+            # Periodic errors
+            if elapsed - last_error_at >= profile["error_every"]:
+                _fire("GET", "/demo/_force_error")
+                last_error_at = elapsed
+
+            # Periodic slow requests — non-blocking, dispatched as side thread
+            if elapsed - last_slow_at >= profile["slow_every"]:
+                threading.Thread(
+                    target=_fire,
+                    args=("GET", f"/demo/_simulate_slow?seconds={profile['slow_seconds']}"),
+                    daemon=True,
+                ).start()
+                last_slow_at = elapsed
+
+            time.sleep(request_interval)
+    finally:
+        _release_demo_slot(demo_id)
+
+
 # --- Public trigger endpoints ---
 
 @demo.route("/demo/burst", methods=["POST"])
@@ -265,6 +316,44 @@ def trigger_slow():
     _record_active_demo(demo_id, "slow", {"delay_seconds": delay})
     threading.Thread(target=_run_slow, args=(delay, demo_id), daemon=True).start()
     return jsonify({"started": True, "demo_id": demo_id, "kind": "slow", "delay_seconds": delay, **info}), 202
+
+
+@demo.route("/demo/full-spectrum", methods=["POST"])
+def trigger_full_spectrum():
+    """Run a unified load test: traffic + errors + slow requests simultaneously."""
+    data = request.get_json(silent=True) or {}
+    level = _bounded_int(
+        data.get("level"),
+        FULLSPECTRUM_LEVEL_DEFAULT,
+        FULLSPECTRUM_LEVEL_MIN,
+        FULLSPECTRUM_LEVEL_MAX,
+    )
+    duration = _bounded_int(
+        data.get("duration_seconds"),
+        FULLSPECTRUM_DURATION_DEFAULT,
+        FULLSPECTRUM_DURATION_MIN,
+        FULLSPECTRUM_DURATION_MAX,
+    )
+
+    ok, demo_id_or_msg, info = _check_and_register_demo()
+    if not ok:
+        return jsonify({"started": False, "error": demo_id_or_msg, **info}), 429
+
+    demo_id = demo_id_or_msg
+    params = {"level": level, "duration_seconds": duration}
+    _record_active_demo(demo_id, "full-spectrum", params)
+    threading.Thread(target=_run_full_spectrum, args=(level, duration, demo_id), daemon=True).start()
+
+    profile = FULLSPECTRUM_PROFILES[level]
+    return jsonify({
+        "started": True,
+        "demo_id": demo_id,
+        "kind": "full-spectrum",
+        "level": level,
+        "duration_seconds": duration,
+        "profile": profile,
+        **info,
+    }), 202
 
 
 # --- Stop endpoint ---

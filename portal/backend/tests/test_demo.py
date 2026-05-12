@@ -220,3 +220,48 @@ def test_simulate_slow_clamps_to_max(client):
     assert response.status_code == 200
     # Don't actually wait 5s — just verify the response shape
     assert response.get_json()["slept_seconds"] == 5
+
+
+# --- Full-spectrum endpoint ---
+
+@patch("demo.threading.Thread")
+def test_full_spectrum_default_level(mock_thread, client):
+    response = client.post("/demo/full-spectrum", json={})
+    assert response.status_code == 202
+    data = response.get_json()
+    assert data["started"] is True
+    assert data["kind"] == "full-spectrum"
+    assert data["level"] == 3  # FULLSPECTRUM_LEVEL_DEFAULT
+    assert data["duration_seconds"] == 60  # FULLSPECTRUM_DURATION_DEFAULT
+    assert "profile" in data
+
+
+@patch("demo.threading.Thread")
+def test_full_spectrum_custom_level_and_duration(mock_thread, client):
+    response = client.post("/demo/full-spectrum", json={"level": 5, "duration_seconds": 120})
+    data = response.get_json()
+    assert data["level"] == 5
+    assert data["duration_seconds"] == 120
+    # Level 5 profile should have higher rps than level 1
+    assert data["profile"]["rps"] == 10
+
+
+@patch("demo.threading.Thread")
+def test_full_spectrum_clamps_level_above_max(mock_thread, client):
+    response = client.post("/demo/full-spectrum", json={"level": 99})
+    assert response.get_json()["level"] == 5
+
+
+@patch("demo.threading.Thread")
+def test_full_spectrum_clamps_duration_below_min(mock_thread, client):
+    response = client.post("/demo/full-spectrum", json={"duration_seconds": 5})
+    assert response.get_json()["duration_seconds"] == 30
+
+
+@patch("demo.threading.Thread")
+def test_full_spectrum_respects_cooldown(mock_thread, client):
+    client._mock_redis.exists.return_value = True
+    client._mock_redis.ttl.return_value = 30
+
+    response = client.post("/demo/full-spectrum", json={})
+    assert response.status_code == 429
