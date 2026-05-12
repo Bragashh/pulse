@@ -286,9 +286,6 @@
         <div class="hero-text" id="hero-text">Loading…</div>
         <div class="hero-sub">Live monitoring across services, infrastructure, and DORA metrics.</div>
       </div>
-      <div class="hero-actions">
-        <a class="button" href="https://grafana.pulse-hq.dev/d/pulse-overview?kiosk" target="_blank">📊 View Live Metrics</a>
-      </div>
     </div>
 
     <!-- Host Health -->
@@ -335,7 +332,7 @@
     <!-- Demo Controls -->
     <h2>
       Try It Live
-      <span class="h2-aux">→ <a href="https://grafana.pulse-hq.dev/d/pulse-overview?kiosk" target="_blank">Open the metrics dashboard</a> in another tab to watch the spike</span>
+      <span class="h2-aux">→ <a href="https://{{ grafana_hostname }}/d/pulse-overview?kiosk" target="_blank">Open the metrics dashboard</a> in another tab to watch the spike</span>
     </h2>
     <div class="demo-controller">
       <div class="left">
@@ -374,7 +371,7 @@
           and host resources updating every 5 seconds. Click Start, switch tabs, and watch the
           panels react.
         </p>
-        <a class="button" href="https://grafana.pulse-hq.dev/d/pulse-overview?kiosk" target="_blank">📊 Open Live Metrics</a>
+        <a class="button" href="https://{{ grafana_hostname }}/d/pulse-overview?kiosk" target="_blank">📊 Open Live Metrics</a>
       </div>
     </div>
 
