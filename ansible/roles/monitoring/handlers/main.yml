@@ -3,5 +3,5 @@
   community.docker.docker_container_exec:
     container: pulse-prometheus
     command: |
-      sh -c "wget -q --method=POST http://localhost:9090/-/reload && echo reloaded"
-  ignore_errors: yes   # Ignore errors in case Prometheus isn't running yet (e.g. first run)
+      sh -c "wget -q --post-data='' -O- http://localhost:9090/-/reload || true"
+  ignore_errors: yes

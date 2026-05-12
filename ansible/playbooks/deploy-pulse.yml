@@ -13,7 +13,10 @@
   vars:
     ecr_registry: "871576119954.dkr.ecr.eu-central-1.amazonaws.com"
     aws_region: "eu-central-1"
-    public_domain: "{{ 'staging.pulse-hq.dev' if 'staging' in inventory_file else 'pulse-hq.dev' }}"
+    is_staging: "{{ 'staging' in inventory_file }}"
+    primary_domain: "{{ 'staging.pulse-hq.dev' if is_staging else 'pulse-hq.dev' }}"
+    grafana_hostname: "{{ 'grafana-staging.pulse-hq.dev' if is_staging else 'grafana.pulse-hq.dev' }}"
+    prometheus_hostname: "{{ 'prometheus-staging.pulse-hq.dev' if is_staging else 'prometheus.pulse-hq.dev' }}"
   roles:
     - common
     - pulse

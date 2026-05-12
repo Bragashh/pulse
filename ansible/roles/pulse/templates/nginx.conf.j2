@@ -1,15 +1,18 @@
 # nginx.conf — rendered by Ansible from roles/pulse/templates/nginx.conf.j2.
 # DO NOT EDIT on the host directly; changes will be overwritten.
 #
-# Rendered for: {{ inventory_hostname }} ({{ public_domain }})
+# Rendered for: {{ inventory_hostname }}
+#   primary domain  : {{ primary_domain }}
+#   grafana hostname: {{ grafana_hostname }}
+#   prom hostname   : {{ prometheus_hostname }}
 
-# Redirect HTTP to HTTPS, except ACME challenge for Let's Encrypt
+# Redirect HTTP to HTTPS, except ACME challenge
 server {
     listen 80;
-    server_name {{ public_domain }}
-                {% if public_domain == 'pulse-hq.dev' %}www.pulse-hq.dev{% endif %}
-                grafana.{{ public_domain }}
-                prometheus.{{ public_domain }};
+    server_name {{ primary_domain }}
+                {% if primary_domain == 'pulse-hq.dev' %}www.pulse-hq.dev{% endif %}
+                {{ grafana_hostname }}
+                {{ prometheus_hostname }};
 
     location /.well-known/acme-challenge/ {
         root /var/www/certbot;
@@ -23,10 +26,10 @@ server {
 # --- Pulse dashboard ---
 server {
     listen 443 ssl;
-    server_name {{ public_domain }}{% if public_domain == 'pulse-hq.dev' %} www.pulse-hq.dev{% endif %};
+    server_name {{ primary_domain }}{% if primary_domain == 'pulse-hq.dev' %} www.pulse-hq.dev{% endif %};
 
-    ssl_certificate     /etc/letsencrypt/live/{{ public_domain }}/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/{{ public_domain }}/privkey.pem;
+    ssl_certificate     /etc/letsencrypt/live/{{ primary_domain }}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/{{ primary_domain }}/privkey.pem;
 
     root /usr/share/nginx/html;
     index index.html;
@@ -45,10 +48,10 @@ server {
 # --- Grafana ---
 server {
     listen 443 ssl;
-    server_name grafana.{{ public_domain }};
+    server_name {{ grafana_hostname }};
 
-    ssl_certificate     /etc/letsencrypt/live/grafana.{{ public_domain }}/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/grafana.{{ public_domain }}/privkey.pem;
+    ssl_certificate     /etc/letsencrypt/live/{{ grafana_hostname }}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/{{ grafana_hostname }}/privkey.pem;
 
     location / {
         proxy_pass http://pulse-grafana:3000;
@@ -65,10 +68,10 @@ server {
 # --- Prometheus (basic auth) ---
 server {
     listen 443 ssl;
-    server_name prometheus.{{ public_domain }};
+    server_name {{ prometheus_hostname }};
 
-    ssl_certificate     /etc/letsencrypt/live/prometheus.{{ public_domain }}/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/prometheus.{{ public_domain }}/privkey.pem;
+    ssl_certificate     /etc/letsencrypt/live/{{ prometheus_hostname }}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/{{ prometheus_hostname }}/privkey.pem;
 
     auth_basic           "Prometheus";
     auth_basic_user_file /etc/nginx/.htpasswd;
