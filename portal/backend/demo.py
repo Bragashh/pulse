@@ -26,6 +26,7 @@ import uuid
 import redis
 import requests
 from flask import Blueprint, jsonify, request
+import metrics
 
 
 demo = Blueprint("demo", __name__)
@@ -389,11 +390,13 @@ def list_active_demos():
 # --- Helper endpoints used by the runners (not public-facing concepts) ---
 
 @demo.route("/demo/_force_error", methods=["GET"])
+@metrics.track_request('demo_force_error')
 def force_error():
     return jsonify({"error": "intentional demo error"}), 500
 
 
 @demo.route("/demo/_simulate_slow", methods=["GET"])
+@metrics.track_request('demo_simulate_slow')
 def simulate_slow():
     seconds = _bounded_int(request.args.get("seconds"), SLOW_DELAY_DEFAULT, SLOW_DELAY_MIN, SLOW_DELAY_MAX)
     time.sleep(seconds)
