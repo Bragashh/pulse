@@ -1,0 +1,17 @@
+---
+# Deploy the monitoring stack (Prometheus, Grafana, Loki, Promtail).
+# Assumes the host has already been provisioned and pulse-net network exists.
+#
+# Usage:
+#   ansible-playbook -i inventory/staging.ini playbooks/deploy-monitoring.yml
+
+- name: Deploy monitoring stack
+  hosts: all
+  become: yes
+  vars_files:
+    - ../vault.yaml
+  vars:
+    public_domain: "{{ 'staging.pulse-hq.dev' if 'staging' in inventory_file else 'pulse-hq.dev' }}"
+  roles:
+    - common
+    - monitoring

@@ -7,6 +7,7 @@
       - docker.io
       - python3-pip
       - python3-docker
+      - apache2-utils
     state: present
     update_cache: yes
     cache_valid_time: 3600

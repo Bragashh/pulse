@@ -1,6 +1,24 @@
 ---
 # Deploy the Pulse application: backend (Flask) + frontend (nginx with HTML).
 
+- name: Ensure /opt/pulse/nginx directory exists for .htpasswd
+  file:
+    path: /opt/pulse/nginx
+    state: directory
+    mode: '0755'
+
+- name: Generate Prometheus .htpasswd file
+  shell: |
+    htpasswd -nb {{ prometheus_basic_auth_user }} '{{ prometheus_basic_auth_password }}' > /opt/pulse/nginx/.htpasswd
+  args:
+    creates: /opt/pulse/nginx/.htpasswd
+  no_log: true
+
+- name: Ensure .htpasswd has correct permissions
+  file:
+    path: /opt/pulse/nginx/.htpasswd
+    mode: '0644'
+
 - name: Login to ECR
   shell: |
     aws ecr get-login-password --region {{ aws_region }} | \
@@ -58,4 +76,5 @@
       - "443:443"
     volumes:
       - /etc/letsencrypt:/etc/letsencrypt:ro
+      - /opt/pulse/nginx/.htpasswd:/etc/nginx/.htpasswd:ro
     restart_policy: always
