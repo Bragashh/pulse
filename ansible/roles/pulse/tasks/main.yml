@@ -25,6 +25,12 @@
     dest: /opt/pulse/nginx/index.html
     mode: '0644'
 
+- name: Render nginx.conf from template
+  template:
+    src: nginx.conf.j2
+    dest: /opt/pulse/nginx/nginx.conf
+    mode: '0644'
+
 - name: Login to ECR
   shell: |
     aws ecr get-login-password --region {{ aws_region }} | \
