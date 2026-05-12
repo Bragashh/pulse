@@ -1,0 +1,17 @@
+---
+# Deploy application services (URL shortener, Redis).
+#
+# Usage:
+#   ansible-playbook -i inventory/staging.ini playbooks/deploy-services.yml
+
+- name: Deploy application services
+  hosts: all
+  become: yes
+  vars_files:
+    - ../vault.yaml
+  vars:
+    is_staging: "{{ 'staging' in inventory_file }}"
+    shortener_rate_limit_per_day: "50"
+  roles:
+    - common
+    - services

@@ -1,0 +1,67 @@
+---
+# Deploy application services on the EC2: Redis, URL shortener.
+
+- name: Ensure /opt/pulse/services directory exists
+  file:
+    path: /opt/pulse/services
+    state: directory
+    mode: '0755'
+
+- name: Copy URL shortener source to host
+  synchronize:
+    src: "{{ playbook_dir }}/../../services/url-shortener/"
+    dest: /opt/pulse/services/url-shortener/
+    delete: yes
+    recursive: yes
+    rsync_opts:
+      - "--exclude=__pycache__"
+      - "--exclude=*.pyc"
+
+- name: Build URL shortener image on host
+  community.docker.docker_image:
+    name: pulse-url-shortener
+    tag: latest
+    source: build
+    build:
+      path: /opt/pulse/services/url-shortener
+      pull: yes
+    force_source: yes
+
+- name: Ensure Redis data directory exists
+  file:
+    path: /opt/pulse/services/redis-data
+    state: directory
+    owner: '999'   # redis user inside the official redis:7-alpine image
+    group: '999'
+    mode: '0755'
+
+- name: Run Redis container
+  community.docker.docker_container:
+    name: pulse-redis
+    image: redis:7-alpine
+    state: started
+    recreate: no
+    networks:
+      - name: pulse-net
+        aliases:
+          - redis
+    volumes:
+      - /opt/pulse/services/redis-data:/data
+    command: redis-server --appendonly yes
+    restart_policy: always
+
+- name: Run URL shortener container
+  community.docker.docker_container:
+    name: pulse-url-shortener
+    image: pulse-url-shortener:latest
+    state: started
+    recreate: yes
+    networks:
+      - name: pulse-net
+        aliases:
+          - url-shortener
+    env:
+      REDIS_HOST: "redis"
+      REDIS_PORT: "6379"
+      SHORTEN_RATE_LIMIT_PER_DAY: "{{ shortener_rate_limit_per_day | default('50') }}"
+    restart_policy: always

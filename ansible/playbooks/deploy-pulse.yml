@@ -1,6 +1,5 @@
 ---
 # Deploy the Pulse application (backend + frontend).
-# Assumes the host has already been provisioned.
 #
 # Usage:
 #   ansible-playbook -i inventory/production.ini playbooks/deploy-pulse.yml
@@ -17,6 +16,7 @@
     primary_domain: "{{ 'staging.pulse-hq.dev' if is_staging else 'pulse-hq.dev' }}"
     grafana_hostname: "{{ 'grafana-staging.pulse-hq.dev' if is_staging else 'grafana.pulse-hq.dev' }}"
     prometheus_hostname: "{{ 'prometheus-staging.pulse-hq.dev' if is_staging else 'prometheus.pulse-hq.dev' }}"
+    shortener_hostname: "{{ 's-staging.pulse-hq.dev' if is_staging else 's.pulse-hq.dev' }}"
   roles:
     - common
     - pulse

@@ -61,6 +61,11 @@ resource "aws_instance" "staging" {
   tags = {
     Name = "pulse-staging"
   }
+
+  root_block_device {
+    volume_size = 30
+    volume_type = "gp3"
+  }
 }
 
 # Production EC2
@@ -72,6 +77,11 @@ resource "aws_instance" "production" {
 
   tags = {
     Name = "pulse-production"
+  }
+
+  root_block_device {
+    volume_size = 30
+    volume_type = "gp3"
   }
 }
 
