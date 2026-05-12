@@ -1,0 +1,15 @@
+# Grafana dashboard provisioning config.
+# Tells Grafana to load any dashboard JSON files from this directory on startup.
+
+apiVersion: 1
+
+providers:
+  - name: 'pulse-dashboards'
+    orgId: 1
+    folder: 'Pulse'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards

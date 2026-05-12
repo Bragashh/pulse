@@ -53,10 +53,16 @@
     dest: /opt/pulse/monitoring/promtail-config.yml
     mode: '0644'
 
-- name: Copy Grafana datasources config
+- name: Copy Grafana dashboard provider config
   copy:
-    src: "{{ playbook_dir }}/../../monitoring/grafana/datasources/datasources.yml"
-    dest: /opt/pulse/monitoring/grafana/datasources/datasources.yml
+    src: "{{ playbook_dir }}/../../monitoring/grafana/dashboards/dashboard-provider.yml"
+    dest: /opt/pulse/monitoring/grafana/dashboards/dashboard-provider.yml
+    mode: '0644'
+
+- name: Copy Grafana dashboard JSON files
+  copy:
+    src: "{{ playbook_dir }}/../../monitoring/grafana/dashboards/pulse-overview.json"
+    dest: /opt/pulse/monitoring/grafana/dashboards/pulse-overview.json
     mode: '0644'
 
 - name: Copy alert rule files (if any)
