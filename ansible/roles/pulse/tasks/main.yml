@@ -18,6 +18,12 @@
   file:
     path: /opt/pulse/nginx/.htpasswd
     mode: '0644'
+    
+- name: Render nginx.conf from template
+  template:
+    src: nginx.conf.j2
+    dest: /opt/pulse/nginx/nginx.conf
+    mode: '0644'
 
 - name: Login to ECR
   shell: |
@@ -77,4 +83,5 @@
     volumes:
       - /etc/letsencrypt:/etc/letsencrypt:ro
       - /opt/pulse/nginx/.htpasswd:/etc/nginx/.htpasswd:ro
+      - /opt/pulse/nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     restart_policy: always

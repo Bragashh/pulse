@@ -13,6 +13,7 @@
   vars:
     ecr_registry: "871576119954.dkr.ecr.eu-central-1.amazonaws.com"
     aws_region: "eu-central-1"
+    public_domain: "{{ 'staging.pulse-hq.dev' if 'staging' in inventory_file else 'pulse-hq.dev' }}"
   roles:
     - common
     - pulse

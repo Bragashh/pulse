@@ -1,0 +1,81 @@
+# nginx.conf — rendered by Ansible from roles/pulse/templates/nginx.conf.j2.
+# DO NOT EDIT on the host directly; changes will be overwritten.
+#
+# Rendered for: {{ inventory_hostname }} ({{ public_domain }})
+
+# Redirect HTTP to HTTPS, except ACME challenge for Let's Encrypt
+server {
+    listen 80;
+    server_name {{ public_domain }}
+                {% if public_domain == 'pulse-hq.dev' %}www.pulse-hq.dev{% endif %}
+                grafana.{{ public_domain }}
+                prometheus.{{ public_domain }};
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+# --- Pulse dashboard ---
+server {
+    listen 443 ssl;
+    server_name {{ public_domain }}{% if public_domain == 'pulse-hq.dev' %} www.pulse-hq.dev{% endif %};
+
+    ssl_certificate     /etc/letsencrypt/live/{{ public_domain }}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/{{ public_domain }}/privkey.pem;
+
+    root /usr/share/nginx/html;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    location /api/ {
+        proxy_pass http://pulse-backend:5000/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+
+# --- Grafana ---
+server {
+    listen 443 ssl;
+    server_name grafana.{{ public_domain }};
+
+    ssl_certificate     /etc/letsencrypt/live/grafana.{{ public_domain }}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/grafana.{{ public_domain }}/privkey.pem;
+
+    location / {
+        proxy_pass http://pulse-grafana:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+}
+
+# --- Prometheus (basic auth) ---
+server {
+    listen 443 ssl;
+    server_name prometheus.{{ public_domain }};
+
+    ssl_certificate     /etc/letsencrypt/live/prometheus.{{ public_domain }}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/prometheus.{{ public_domain }}/privkey.pem;
+
+    auth_basic           "Prometheus";
+    auth_basic_user_file /etc/nginx/.htpasswd;
+
+    location / {
+        proxy_pass http://pulse-prometheus:9090;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
