@@ -2,167 +2,565 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Pulse — DevOps Monitor</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pulse — DevOps Monitoring Platform</title>
   <style>
+    /* ---------- Reset & base ---------- */
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Segoe UI', sans-serif; background: #0f1117; color: #e2e8f0; min-height: 100vh; }
-    header { padding: 24px 40px; border-bottom: 1px solid #1e2330; display: flex; align-items: center; justify-content: space-between; }
-    header h1 { font-size: 1.4rem; font-weight: 600; letter-spacing: 0.05em; color: #7dd3fc; }
-    header span { font-size: 0.85rem; color: #64748b; }
-    .container { padding: 40px; display: grid; gap: 32px; }
-    .section-title { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: #64748b; margin-bottom: 16px; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
-    .card { background: #1a1f2e; border: 1px solid #1e2330; border-radius: 12px; padding: 24px; }
-    .card-label { font-size: 0.75rem; color: #64748b; margin-bottom: 8px; }
-    .card-value { font-size: 2rem; font-weight: 700; color: #f1f5f9; }
-    .card-sub { font-size: 0.78rem; color: #64748b; margin-top: 4px; }
-    .score-card { background: #1a1f2e; border: 1px solid #1e2330; border-radius: 12px; padding: 32px; display: flex; align-items: center; gap: 32px; }
-    .score-number { font-size: 4rem; font-weight: 800; }
-    .score-healthy { color: #4ade80; }
-    .score-degraded { color: #facc15; }
-    .score-critical { color: #f87171; }
-    .score-label { font-size: 1rem; color: #94a3b8; }
-    .score-status { font-size: 1.2rem; font-weight: 600; margin-top: 4px; }
-    .uptime-grid { display: grid; gap: 12px; }
-    .uptime-row { background: #1a1f2e; border: 1px solid #1e2330; border-radius: 10px; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; }
-    .uptime-name { font-size: 0.9rem; font-weight: 600; }
-    .uptime-latency { font-size: 0.78rem; color: #64748b; margin-top: 2px; }
-    .badge { font-size: 0.7rem; font-weight: 600; padding: 3px 10px; border-radius: 99px; }
-    .badge.up { background: #052e16; color: #4ade80; }
-    .badge.down { background: #2d0a0a; color: #f87171; }
-    .badge.degraded { background: #1e1a05; color: #facc15; }
-    .dora-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
-    .loading { color: #475569; font-size: 0.85rem; }
-    .refresh { font-size: 0.75rem; color: #475569; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #0f172a;
+      color: #f1f5f9;
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+    a { color: inherit; text-decoration: none; }
+
+    /* ---------- Layout ---------- */
+    .container { max-width: 1400px; margin: 0 auto; padding: 0 24px; }
+
+    /* ---------- Header ---------- */
+    header {
+      background: #020617;
+      border-bottom: 1px solid #1e293b;
+      padding: 18px 0;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      backdrop-filter: blur(8px);
+    }
+    header .container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand .logo { font-size: 26px; }
+    .brand h1 {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+    .brand .tag {
+      font-size: 12px;
+      color: #94a3b8;
+      padding: 3px 9px;
+      background: #1e293b;
+      border-radius: 4px;
+      letter-spacing: 0.02em;
+    }
+    .header-right { display: flex; gap: 8px; align-items: center; }
+    .header-right .refresh { font-size: 12px; color: #64748b; }
+
+    /* ---------- Buttons ---------- */
+    button, .button {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 10px 18px;
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.15s ease, transform 0.05s ease;
+      letter-spacing: 0.02em;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    button:hover:not(:disabled), .button:hover { background: #2563eb; }
+    button:active:not(:disabled), .button:active { transform: translateY(1px); }
+    button:disabled {
+      background: #334155;
+      color: #64748b;
+      cursor: not-allowed;
+    }
+    button.secondary, .button.secondary {
+      background: transparent;
+      border: 1px solid #334155;
+      color: #f1f5f9;
+    }
+    button.secondary:hover, .button.secondary:hover {
+      border-color: #3b82f6;
+      color: #60a5fa;
+      background: rgba(59, 130, 246, 0.05);
+    }
+    button.stop {
+      background: #ef4444;
+    }
+    button.stop:hover:not(:disabled) {
+      background: #dc2626;
+    }
+
+    /* ---------- Section titles ---------- */
+    h2 {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #94a3b8;
+      margin: 40px 0 16px 0;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #1e293b;
+    }
+
+    /* ---------- Hero ---------- */
+    .hero {
+      background: linear-gradient(135deg, #1e293b 0%, #1e3a8a 100%);
+      border-radius: 16px;
+      padding: 40px;
+      margin: 32px 0;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 40px;
+      align-items: center;
+    }
+    .hero-score {
+      font-size: 88px;
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -0.04em;
+    }
+    .hero-score.healthy { color: #10b981; }
+    .hero-score.degraded { color: #f59e0b; }
+    .hero-score.critical { color: #ef4444; }
+    .hero-label { font-size: 13px; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px; }
+    .hero-text { font-size: 22px; font-weight: 600; }
+    .hero-sub { font-size: 14px; color: #94a3b8; margin-top: 8px; }
+    .hero-actions { display: flex; flex-direction: column; gap: 8px; min-width: 200px; }
+
+    /* ---------- Cards & grids ---------- */
+    .grid { display: grid; gap: 16px; }
+    .grid-4 { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+    .grid-3 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+    .grid-2 { grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); }
+
+    .card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 20px;
+    }
+    .card-label {
+      font-size: 12px;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+    }
+    .card-value {
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .card-value.medium { font-size: 24px; }
+    .card-sub { font-size: 12px; color: #94a3b8; margin-top: 6px; }
+
+    /* ---------- Pills ---------- */
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 11px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .pill::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+    .pill.up, .pill.healthy { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+    .pill.degraded { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+    .pill.down, .pill.critical { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+
+    /* ---------- Uptime list ---------- */
+    .uptime-list { display: grid; gap: 8px; }
+    .uptime-row {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: border-color 0.15s ease;
+    }
+    .uptime-row:hover { border-color: #475569; }
+    .uptime-name { font-size: 15px; font-weight: 600; }
+    .uptime-url { font-size: 12px; color: #64748b; font-family: 'JetBrains Mono', 'Consolas', monospace; margin-top: 2px; }
+    .uptime-latency { font-size: 12px; color: #94a3b8; font-family: monospace; }
+
+    /* ---------- Demo cards ---------- */
+    .demo-card { display: flex; flex-direction: column; gap: 12px; }
+    .demo-card h3 { font-size: 17px; font-weight: 600; }
+    .demo-card p.desc { font-size: 13px; color: #94a3b8; line-height: 1.5; }
+    .demo-inputs { display: flex; gap: 12px; flex-wrap: wrap; }
+    .demo-inputs label {
+      display: flex; flex-direction: column; gap: 4px;
+      font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8;
+      flex: 1; min-width: 110px;
+    }
+    .demo-inputs input {
+      background: #0f172a;
+      border: 1px solid #334155;
+      color: #f1f5f9;
+      padding: 8px 10px;
+      border-radius: 4px;
+      font-size: 14px;
+      font-family: 'JetBrains Mono', 'Consolas', monospace;
+    }
+    .demo-inputs input:disabled { opacity: 0.5; cursor: not-allowed; }
+    .demo-inputs input:focus { outline: none; border-color: #3b82f6; }
+    .demo-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .demo-status { font-size: 12px; color: #94a3b8; font-family: monospace; }
+    .demo-status.running { color: #f59e0b; }
+    .demo-status.error { color: #ef4444; }
+
+    /* ---------- Footer ---------- */
+    footer {
+      text-align: center;
+      color: #64748b;
+      font-size: 12px;
+      padding: 32px 0;
+      margin-top: 48px;
+      border-top: 1px solid #1e293b;
+    }
+    footer a { color: #60a5fa; }
+    footer a:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
-<header>
-  <div style="display:flex;align-items:center;gap:12px">
-    <h1>⚡ Pulse</h1>
-    <span>DevOps Monitor</span>
-  </div>
-  <span class="refresh" id="last-refresh">Loading...</span>
-</header>
+  <header>
+    <div class="container">
+      <div class="brand">
+        <span class="logo">⚡</span>
+        <h1>Pulse</h1>
+        <span class="tag">DevOps Monitoring</span>
+      </div>
+      <div class="header-right">
+        <span class="refresh" id="last-refresh">Loading…</span>
+      </div>
+    </div>
+  </header>
 
-<div class="container">
-
-  <!-- Health Score -->
-  <div>
-    <div class="section-title">Health Score</div>
-    <div class="score-card">
-      <div class="score-number" id="score-number">—</div>
+  <div class="container">
+    <!-- Hero -->
+    <div class="hero">
       <div>
-        <div class="score-label">Overall System Health</div>
-        <div class="score-status" id="score-status">Loading...</div>
+        <div class="hero-label">Health Score</div>
+        <div class="hero-score" id="hero-score">—</div>
+      </div>
+      <div>
+        <div class="hero-text" id="hero-text">Loading…</div>
+        <div class="hero-sub">Live monitoring across services, infrastructure, and DORA metrics.</div>
+      </div>
+      <div class="hero-actions">
+        <a class="button" href="https://grafana.pulse-hq.dev/d/pulse-overview?kiosk" target="_blank">📊 View Live Metrics</a>
+        <a class="button secondary" href="https://grafana.pulse-hq.dev/explore?left=%7B%22datasource%22:%22loki%22%7D" target="_blank">📋 Open Logs</a>
       </div>
     </div>
-  </div>
 
-  <!-- Server Metrics -->
-  <div>
-    <div class="section-title">Server Metrics</div>
-    <div class="grid">
+    <!-- Host Health -->
+    <h2>Host Health</h2>
+    <div class="grid grid-3">
       <div class="card">
-        <div class="card-label">CPU Usage</div>
-        <div class="card-value" id="cpu">—</div>
-        <div class="card-sub">percent</div>
+        <div class="card-label">CPU</div>
+        <div class="card-value" id="cpu">—%</div>
+        <div class="card-sub" id="cpu-status">checking…</div>
       </div>
       <div class="card">
-        <div class="card-label">Memory Usage</div>
-        <div class="card-value" id="mem">—</div>
-        <div class="card-sub">percent</div>
+        <div class="card-label">Memory</div>
+        <div class="card-value" id="mem">—%</div>
+        <div class="card-sub" id="mem-detail">—</div>
       </div>
       <div class="card">
-        <div class="card-label">Disk Usage</div>
-        <div class="card-value" id="disk">—</div>
-        <div class="card-sub">percent</div>
+        <div class="card-label">Disk</div>
+        <div class="card-value" id="disk">—%</div>
+        <div class="card-sub">root filesystem</div>
       </div>
     </div>
-  </div>
 
-  <!-- Uptime -->
-  <div>
-    <div class="section-title">Uptime</div>
-    <div class="uptime-grid" id="uptime-grid">
-      <div class="loading">Loading services...</div>
+    <!-- Uptime monitoring -->
+    <h2>Service Uptime</h2>
+    <div class="uptime-list" id="uptime-list">
+      <div class="card">Loading…</div>
     </div>
-  </div>
 
-  <!-- DORA Metrics -->
-  <div>
-    <div class="section-title">DORA Metrics</div>
-    <div class="dora-grid">
+    <!-- DORA metrics -->
+    <h2>DORA Metrics</h2>
+    <div class="grid grid-2">
       <div class="card">
-        <div class="card-label">Commits (last 7 days)</div>
-        <div class="card-value" id="commits">—</div>
-        <div class="card-sub" id="per-day">per day</div>
+        <div class="card-label">Deployment Frequency</div>
+        <div class="card-value medium" id="dora-deploys">—</div>
+        <div class="card-sub" id="dora-deploys-sub">commits to main, last 7 days</div>
       </div>
       <div class="card">
         <div class="card-label">Change Failure Rate</div>
-        <div class="card-value" id="failure-rate">—</div>
-        <div class="card-sub" id="runs-info">pipeline runs</div>
+        <div class="card-value medium" id="dora-failures">—</div>
+        <div class="card-sub" id="dora-failures-sub">CI runs analyzed</div>
       </div>
     </div>
+
+    <!-- Demo Controls -->
+    <h2>Demo Controls</h2>
+    <p style="color:#94a3b8;font-size:13px;margin-bottom:16px;">
+      Generate observable load on the platform. Watch the live metrics dashboard (button at the top) to see the spike in real time.
+      Rate-limited to 1 demo per minute per visitor.
+    </p>
+    <div class="grid grid-2">
+      <!-- Burst -->
+      <div class="card demo-card" id="card-burst">
+        <h3>Traffic Burst</h3>
+        <p class="desc">Fire N requests rapidly. Brief spike in request-rate panels.</p>
+        <div class="demo-inputs">
+          <label>Count (1–100)
+            <input type="number" id="burst-count" value="20" min="1" max="100" />
+          </label>
+        </div>
+        <div class="demo-actions">
+          <button onclick="startDemo('burst')">Start</button>
+          <span class="demo-status" id="burst-status"></span>
+        </div>
+      </div>
+
+      <!-- Sustained -->
+      <div class="card demo-card" id="card-sustained">
+        <h3>Sustained Load</h3>
+        <p class="desc">Steady traffic for N seconds at M req/s. Use stop button to interrupt.</p>
+        <div class="demo-inputs">
+          <label>Duration sec (5–60)
+            <input type="number" id="sustained-duration" value="30" min="5" max="60" />
+          </label>
+          <label>RPS (1–5)
+            <input type="number" id="sustained-rps" value="3" min="1" max="5" />
+          </label>
+        </div>
+        <div class="demo-actions">
+          <button onclick="startDemo('sustained')">Start</button>
+          <button class="stop" id="sustained-stop" onclick="stopDemo('sustained')" disabled>Stop</button>
+          <span class="demo-status" id="sustained-status"></span>
+        </div>
+      </div>
+
+      <!-- Errors -->
+      <div class="card demo-card" id="card-errors">
+        <h3>Error Burst</h3>
+        <p class="desc">Generate N intentional 500s. Drives the error-rate metric up.</p>
+        <div class="demo-inputs">
+          <label>Count (1–50)
+            <input type="number" id="errors-count" value="5" min="1" max="50" />
+          </label>
+        </div>
+        <div class="demo-actions">
+          <button onclick="startDemo('errors')">Start</button>
+          <span class="demo-status" id="errors-status"></span>
+        </div>
+      </div>
+
+      <!-- Slow -->
+      <div class="card demo-card" id="card-slow">
+        <h3>Slow Request</h3>
+        <p class="desc">A single request that sleeps N seconds. Spikes p95 latency.</p>
+        <div class="demo-inputs">
+          <label>Delay sec (1–5)
+            <input type="number" id="slow-delay" value="2" min="1" max="5" />
+          </label>
+        </div>
+        <div class="demo-actions">
+          <button onclick="startDemo('slow')">Start</button>
+          <button class="stop" id="slow-stop" onclick="stopDemo('slow')" disabled>Stop</button>
+          <span class="demo-status" id="slow-status"></span>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      Pulse v1.5.1 &middot; built by <a href="https://github.com/Bragashh" target="_blank">@Bragashh</a> &middot;
+      <a href="https://github.com/Bragashh/pulse" target="_blank">source on GitHub</a>
+    </footer>
   </div>
 
-</div>
+  <script>
+    const demoState = { burst: null, sustained: null, errors: null, slow: null };
 
-<script>
-  const API = '/api';
+    function updateRefresh() {
+      document.getElementById('last-refresh').textContent = 'updated ' + new Date().toLocaleTimeString();
+    }
 
-  async function fetchScore() {
-    const res = await fetch(API + '/score');
-    const data = await res.json();
-    const el = document.getElementById('score-number');
-    el.textContent = data.score;
-    el.className = 'score-number score-' + data.status;
-    document.getElementById('score-status').textContent = data.status.charAt(0).toUpperCase() + data.status.slice(1);
-  }
+    // --- Health (score + system metrics) ---
+    async function refreshHealth() {
+      try {
+        const [score, metrics] = await Promise.all([
+          fetch('/api/score').then(r => r.json()),
+          fetch('/api/metrics').then(r => r.json()),
+        ]);
 
-  async function fetchMetrics() {
-    const res = await fetch(API + '/metrics');
-    const data = await res.json();
-    document.getElementById('cpu').textContent = data.cpu.percent + '%';
-    document.getElementById('mem').textContent = data.memory.percent + '%';
-    document.getElementById('disk').textContent = data.disk.percent + '%';
-  }
+        const scoreEl = document.getElementById('hero-score');
+        scoreEl.textContent = score.score;
+        scoreEl.className = 'hero-score ' + score.status;
 
-  async function fetchUptime() {
-    const res = await fetch(API + '/uptime');
-    const data = await res.json();
-    const grid = document.getElementById('uptime-grid');
-    grid.innerHTML = '';
-    data.services.forEach(s => {
-      const row = document.createElement('div');
-      row.className = 'uptime-row';
-      row.innerHTML =
-        '<div>' +
-          '<div class="uptime-name">' + s.name + '</div>' +
-          '<div class="uptime-latency">' + (s.latency_ms ? s.latency_ms + 'ms' : 'N/A') + ' — ' + s.url + '</div>' +
-        '</div>' +
-        '<span class="badge ' + s.status + '">' + s.status + '</span>';
-      grid.appendChild(row);
-    });
-  }
+        const status = score.status;
+        const textEl = document.getElementById('hero-text');
+        textEl.innerHTML = status === 'healthy'
+          ? 'All systems operational <span class="pill healthy">healthy</span>'
+          : status === 'degraded'
+          ? 'Some services degraded <span class="pill degraded">degraded</span>'
+          : 'Service issues detected <span class="pill critical">critical</span>';
 
-  async function fetchDora() {
-    const res = await fetch(API + '/dora');
-    const data = await res.json();
-    document.getElementById('commits').textContent = data.deployment_frequency.commits_last_7_days;
-    document.getElementById('per-day').textContent = data.deployment_frequency.per_day + ' per day';
-    document.getElementById('failure-rate').textContent = data.change_failure_rate.failure_rate_percent + '%';
-    document.getElementById('runs-info').textContent = data.change_failure_rate.total_runs + ' pipeline runs';
-  }
+        document.getElementById('cpu').textContent = metrics.cpu.percent.toFixed(0) + '%';
+        document.getElementById('cpu-status').textContent = metrics.cpu.percent > 80 ? 'high' : metrics.cpu.percent > 60 ? 'elevated' : 'nominal';
+        document.getElementById('mem').textContent = metrics.memory.percent.toFixed(0) + '%';
+        const memGb = (metrics.memory.used / (1024 ** 3)).toFixed(1);
+        const memTotalGb = (metrics.memory.total / (1024 ** 3)).toFixed(1);
+        document.getElementById('mem-detail').textContent = `${memGb} / ${memTotalGb} GB`;
+        document.getElementById('disk').textContent = metrics.disk.percent.toFixed(0) + '%';
+        updateRefresh();
+      } catch (err) {
+        console.error('refreshHealth failed:', err);
+      }
+    }
 
-  async function refresh() {
-    await Promise.all([fetchScore(), fetchMetrics(), fetchUptime(), fetchDora()]);
-    document.getElementById('last-refresh').textContent = 'Last updated: ' + new Date().toLocaleTimeString();
-  }
+    // --- Uptime monitoring ---
+    async function refreshUptime() {
+      try {
+        const data = await fetch('/api/uptime').then(r => r.json());
+        const list = document.getElementById('uptime-list');
+        list.innerHTML = data.services.map(s => {
+          const status = s.status || 'unknown';
+          const latency = s.latency_ms !== undefined ? `${s.latency_ms} ms` : '';
+          return `
+            <div class="uptime-row">
+              <div>
+                <div class="uptime-name">${s.name}</div>
+                <div class="uptime-url">${s.url}</div>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+                <span class="pill ${status}">${status}</span>
+                <span class="uptime-latency">${latency}</span>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } catch (err) {
+        console.error('refreshUptime failed:', err);
+      }
+    }
 
-  refresh();
-  setInterval(refresh, 30000);
-</script>
+    // --- DORA metrics ---
+    async function refreshDora() {
+      try {
+        const data = await fetch('/api/dora').then(r => r.json());
+        const deploys = data.deployment_frequency;
+        document.getElementById('dora-deploys').textContent = deploys.commits_last_7_days;
+        document.getElementById('dora-deploys-sub').textContent = `${deploys.per_day}/day average, last 7 days`;
+
+        const fails = data.change_failure_rate;
+        document.getElementById('dora-failures').textContent = fails.failure_rate_percent + '%';
+        document.getElementById('dora-failures-sub').textContent = `${fails.failed_runs} of ${fails.total_runs} CI runs failed`;
+      } catch (err) {
+        console.error('refreshDora failed:', err);
+      }
+    }
+
+    // --- Demo controls ---
+    async function startDemo(kind) {
+      const card = document.getElementById('card-' + kind);
+      const statusEl = document.getElementById(kind + '-status');
+      const button = card.querySelector('button:not(.stop)');
+      const inputs = card.querySelectorAll('input');
+
+      const body = {};
+      if (kind === 'burst' || kind === 'errors') {
+        body.count = Number(card.querySelector('input').value);
+      } else if (kind === 'sustained') {
+        body.duration_seconds = Number(document.getElementById('sustained-duration').value);
+        body.rps = Number(document.getElementById('sustained-rps').value);
+      } else if (kind === 'slow') {
+        body.delay_seconds = Number(document.getElementById('slow-delay').value);
+      }
+
+      try {
+        const resp = await fetch('/demo/' + kind, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        const data = await resp.json();
+
+        if (!resp.ok || !data.started) {
+          statusEl.textContent = data.error || 'failed';
+          statusEl.className = 'demo-status error';
+          // Clear error after 5s
+          setTimeout(() => { statusEl.textContent = ''; statusEl.className = 'demo-status'; }, 5000);
+          return;
+        }
+
+        demoState[kind] = data.demo_id;
+        button.disabled = true;
+        inputs.forEach(i => i.disabled = true);
+        statusEl.textContent = `running…`;
+        statusEl.className = 'demo-status running';
+
+        if (kind === 'sustained' || kind === 'slow') {
+          document.getElementById(kind + '-stop').disabled = false;
+        }
+
+        const lockMs = lockDurationMs(kind, body);
+        setTimeout(() => unlockDemo(kind), lockMs);
+      } catch (err) {
+        statusEl.textContent = 'network error';
+        statusEl.className = 'demo-status error';
+      }
+    }
+
+    function lockDurationMs(kind, body) {
+      if (kind === 'burst') return 5000;
+      if (kind === 'errors') return 5000;
+      if (kind === 'sustained') return (body.duration_seconds || 30) * 1000 + 1000;
+      if (kind === 'slow') return (body.delay_seconds || 2) * 1000 + 1000;
+      return 5000;
+    }
+
+    async function stopDemo(kind) {
+      const demoId = demoState[kind];
+      if (!demoId) return;
+      try {
+        await fetch('/demo/stop/' + demoId, { method: 'POST' });
+      } catch (err) { console.error('stop failed:', err); }
+      unlockDemo(kind);
+    }
+
+    function unlockDemo(kind) {
+      const card = document.getElementById('card-' + kind);
+      const button = card.querySelector('button:not(.stop)');
+      const inputs = card.querySelectorAll('input');
+      const statusEl = document.getElementById(kind + '-status');
+
+      demoState[kind] = null;
+      button.disabled = false;
+      inputs.forEach(i => i.disabled = false);
+      statusEl.textContent = '';
+      statusEl.className = 'demo-status';
+
+      const stopBtn = document.getElementById(kind + '-stop');
+      if (stopBtn) stopBtn.disabled = true;
+    }
+
+    // --- Init ---
+    refreshHealth();
+    refreshUptime();
+    refreshDora();
+    setInterval(refreshHealth, 10000);
+    setInterval(refreshUptime, 15000);
+    setInterval(refreshDora, 60000);
+  </script>
 </body>
 </html>

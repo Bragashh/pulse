@@ -144,4 +144,5 @@
       GF_SERVER_ROOT_URL: "https://{{ grafana_hostname }}"
       GF_AUTH_ANONYMOUS_ENABLED: "true"
       GF_AUTH_ANONYMOUS_ORG_ROLE: "Viewer"
+      GF_SECURITY_ALLOW_EMBEDDING: "true"
     restart_policy: always
